@@ -1,0 +1,151 @@
+.ref-cashier-page{padding-bottom:12px;min-width:0}
+.ref-cashier-page .pos-layout{grid-template-columns:minmax(0,1fr) 28%;gap:18px;margin-top:14px;align-items:start}
+.ref-cashier-page .pos-main{gap:19px}
+.ref-cashier-page .form-card{border:0;border-radius:0;background:transparent;padding:0}
+.ref-cashier-page .customer-row{grid-template-columns:1.3fr 1.15fr .8fr;gap:16px}
+.ref-cashier-page label{font-size:12px;font-weight:600;margin-bottom:8px;color:#111}
+.ref-cashier-page .input-icon{border-radius:6px;gap:9px;background:#fbfcff;padding:0 10px}
+.ref-cashier-page .input-icon input{font-size:12px;padding:10px 0}
+.ref-cashier-page .input-icon.readonly{font-size:11px;min-height:38px}
+.ref-cashier-page .order-number span{font-size:10px;color:#657088}
+.ref-cashier-page .section-label{margin:19px 0 10px;min-height:17px}
+.ref-cashier-page .section-label h3{font-size:13px;color:#111}
+.ref-cashier-page .ref-demo-fill{font-size:10px;font-weight:500;gap:4px}
+.ref-cashier-page .service-grid{gap:14px}
+.ref-cashier-page .service-card{border-radius:8px;min-height:82px;display:flex;flex-direction:row;align-items:center;gap:14px;background:#fff;padding:13px 15px;box-shadow:none}
+.ref-cashier-page .service-card.selected{background:#064bff;border-color:#064bff;color:#fff}
+.ref-cashier-page .service-card b{font-size:12px;font-weight:700}
+.ref-cashier-page .service-card small{font-size:11px;margin-top:6px;color:#171d2b}
+.ref-cashier-page .service-card em{display:block;margin-top:4px;font-style:normal;font-size:10px;color:#798096}
+.ref-cashier-page .service-card.selected small,.ref-cashier-page .service-card.selected em{color:#fff}
+.ref-weight-notes-row{display:grid;grid-template-columns:1fr 1.5fr auto;align-items:end;gap:15px;margin-top:18px}
+.ref-cashier-page .weight-input{height:57px;border-radius:7px;background:#fff;justify-content:space-between}
+.ref-cashier-page .weight-input button{height:100%;width:36px;background:#f4f6fc;color:#064bff}
+.ref-cashier-page .weight-input input{font-size:15px;font-weight:600;flex:1;min-width:0;width:40px;padding:12px 0 12px 6px;text-align:right}
+.ref-cashier-page .weight-input>span{font-size:12px;color:#111;margin:0 9px 0 3px;font-weight:500}
+.ref-cashier-notes{min-width:0}
+.ref-cashier-notes textarea{font-size:10px;line-height:1.5;resize:vertical;min-height:57px;height:57px;border-radius:6px;background:#fbfcff;padding:9px 10px}
+.ref-weight-notes-row>.primary.small{font-size:11px;white-space:nowrap;min-height:43px;align-self:end;margin-bottom:7px;padding:9px 12px;border-radius:6px;gap:6px}
+.ref-cashier-page .order-card{border:0;background:transparent;border-radius:0;padding:0;overflow:visible;min-height:172px}
+.ref-cashier-page .order-card .section-label{margin:3px 0 10px}
+.ref-cashier-page .danger-link{font-size:10px;gap:5px}
+.ref-cashier-page .cart-table{font-size:11px;min-width:520px}
+.ref-cashier-page .cart-table th{font-size:10px;font-weight:500;padding:10px 10px;color:#566078}
+.ref-cashier-page .cart-table td{padding:13px 10px;font-size:11px}
+.ref-cashier-page .cart-table th:first-child,.ref-cashier-page .cart-table td:first-child{width:7%}
+.ref-cashier-page .cart-table th:nth-child(2){width:27%}
+.ref-cashier-page .cart-table th:nth-child(3){width:16%}
+.ref-cashier-page .cart-table td:nth-child(5),.ref-cashier-page .cart-table th:nth-child(5){text-align:left}
+.ref-cashier-page .cart-table td:last-child,.ref-cashier-page .cart-table th:last-child{text-align:center;width:48px}
+.ref-cashier-page .cart-item b{font-size:11px}
+.ref-cashier-page .cart-item small{font-size:9px;margin-top:3px}
+.ref-cart-weight{display:flex;align-items:center;gap:3px}
+.ref-cashier-page .ref-cart-weight input{width:44px;font-size:11px;padding:5px 0;background:transparent;border:1px solid transparent;text-align:right;border-radius:4px}
+.ref-cashier-page .ref-cart-weight input:hover{border-color:#dce4f4;background:#fff}
+.ref-cart-weight>span{font-size:10px;color:#586175}
+.ref-cashier-page .cart-empty{height:164px;gap:8px;background:#fff}
+.ref-cashier-page .cart-empty b{font-size:12px}
+.ref-cashier-page .cart-empty>span{font-size:11px}
+.ref-cashier-page .payment-column{position:relative;top:auto}
+.ref-cashier-page .payment-card{padding:0 0 8px;border:0;border-radius:0;background:transparent}
+.ref-cashier-page .summary-tabs{border-radius:6px;gap:5px;margin:0 0 9px;background:#f1f4fa}
+.ref-cashier-page .summary-tabs button{font-size:11px;min-height:37px;padding:8px 5px;gap:7px;border-radius:6px}
+.ref-cashier-page .summary-tabs button.active{background:#064bff}
+.ref-cashier-page .summary-tabs svg{width:15px;height:15px}
+.ref-cashier-page .summary-line{padding:10px 1px;font-size:12px;gap:8px}
+.ref-cashier-page .summary-line>b{font-size:13px}
+.ref-cashier-page .summary-line label{font-size:11px;font-weight:400;margin:0}
+.ref-cashier-page .discount-line{padding-top:2px;padding-bottom:9px}
+.ref-cashier-page .money-input{border-radius:6px;padding:0 9px;background:#f5f7fc;max-width:64%;width:190px}
+.ref-cashier-page .money-input input{font-size:13px;padding:8px 0}
+.ref-cashier-page .money-input>span{font-size:10px}
+.ref-cashier-page .discount-help{font-size:10px;line-height:1.4;margin:-3px 1px 8px;color:#647087}
+.ref-cashier-page .discount-help:empty{display:none}
+.ref-cashier-page .discount-help.invalid{color:#bc3024}
+.ref-cashier-page .total-highlight{border-radius:7px;margin:0 0 12px;padding:15px 11px;gap:8px;background:#d4ff28}
+.ref-cashier-page .total-highlight>b{font-size:19px}
+.ref-cashier-page .total-highlight>strong{font-size:30px;font-weight:850;letter-spacing:-1px;white-space:nowrap}
+.ref-cashier-page .payment-heading{font-size:11px;margin:0 0 8px}
+.ref-cashier-page .payment-methods{gap:7px}
+.ref-cashier-page .payment-methods button{min-height:69px;border-radius:7px;gap:6px;background:#fbfcff}
+.ref-cashier-page .payment-methods button.selected{background:#064bff}
+.ref-cashier-page .payment-methods button svg{width:24px;height:24px}
+.ref-cashier-page .payment-methods b{font-size:10px}
+.ref-cashier-page .paid-line{padding-top:13px;padding-bottom:7px}
+.ref-cashier-page .change-line{padding-top:5px;padding-bottom:13px}
+.ref-cashier-page .change-line>b{font-size:15px;color:#111}
+.ref-cashier-page .change-line>b.amount-short{color:#c73223}
+.ref-cashier-page .payment-cta{min-height:45px;border-radius:7px;padding:10px 14px;font-size:12px;gap:10px;background:#064bff}
+.ref-cashier-page .payment-cta>svg{height:20px;width:20px}
+.ref-cashier-page .receipt-decoration{margin-top:4px;height:243px;border:0;border-radius:12px;overflow:hidden}
+.ref-cashier-page .paper-teaser{left:25%;height:240px;width:50%;padding:21px 13px}
+.ref-cashier-page .paper-teaser .brand{font-size:17px}
+.ref-cashier-page .paper-teaser .brand img{width:30px;height:32px}
+.ref-cashier-page .print-sticker{left:0;top:68px;font-size:19px}
+.ref-cashier-page .fresh-sticker{right:1px;top:104px;font-size:15px}
+@media(max-width:1250px){
+ .ref-cashier-page .pos-layout{grid-template-columns:minmax(0,1fr) 30%;gap:13px}
+ .ref-cashier-page .customer-row{gap:10px;grid-template-columns:1.2fr 1fr .8fr}
+ .ref-cashier-page .customer-row label{font-size:11px}
+ .ref-cashier-page .input-icon input{font-size:11px}
+ .ref-cashier-page .input-icon.readonly{font-size:10px}
+ .ref-cashier-page .service-grid{gap:8px}
+ .ref-cashier-page .service-card{padding:12px 9px;gap:8px}
+ .ref-cashier-page .service-card>svg{width:25px;height:28px}
+ .ref-cashier-page .service-card b{font-size:11px}
+ .ref-cashier-page .service-card small{font-size:10px}
+ .ref-cashier-page .service-card em{font-size:9px}
+ .ref-weight-notes-row{grid-template-columns:1fr 1.4fr;gap:12px}
+ .ref-weight-notes-row>.primary.small{grid-column:2;justify-self:end;margin:0;min-height:35px}
+ .ref-cashier-page .total-highlight>strong{font-size:26px}
+ .ref-cashier-page .total-highlight>b{font-size:16px}
+ .ref-cashier-page .summary-tabs button{font-size:10px;gap:4px}
+ .ref-cashier-page .payment-cta{font-size:11px;padding:10px;gap:7px}
+ .ref-cashier-page .receipt-decoration{height:225px}
+ .ref-cashier-page .print-sticker{font-size:16px;padding:8px}
+ .ref-cashier-page .fresh-sticker{font-size:12px;padding:8px}
+}
+@media(max-width:850px){
+ .ref-cashier-page .pos-layout{grid-template-columns:minmax(0,1fr) 265px;gap:14px}
+ .ref-cashier-page .customer-row{grid-template-columns:1fr 1fr}
+ .ref-cashier-page .customer-row>div:last-child{grid-column:1/-1}
+ .ref-cashier-page .service-grid{grid-template-columns:1fr}
+ .ref-cashier-page .service-card{min-height:64px;gap:13px;padding:10px 14px}
+ .ref-cashier-page .service-card>span{display:grid;grid-template-columns:1fr auto;gap:3px 10px;flex:1}
+ .ref-cashier-page .service-card b{font-size:12px}
+ .ref-cashier-page .service-card small{margin:0;font-size:10px}
+ .ref-cashier-page .service-card em{grid-column:1/-1;margin:0}
+ .ref-weight-notes-row{grid-template-columns:1fr}
+ .ref-weight-notes-row>.primary.small{grid-column:1;justify-self:stretch;margin:0}
+ .ref-cashier-page .weight-input{height:45px}
+}
+@media(max-width:640px){
+ .ref-cashier-page .pos-layout{display:flex;flex-direction:column;gap:22px;margin-top:16px}
+ .ref-cashier-page .pos-main,.ref-cashier-page .payment-column{width:100%}
+ .ref-cashier-page .customer-row{grid-template-columns:1fr 1fr;gap:12px}
+ .ref-cashier-page .input-icon input{font-size:12px}
+ .ref-cashier-page .input-icon.readonly{font-size:11px;min-height:40px}
+ .ref-cashier-page .service-grid{grid-template-columns:1fr}
+ .ref-weight-notes-row{grid-template-columns:1fr 1.3fr;gap:12px}
+ .ref-cashier-page .weight-input{height:57px}
+ .ref-weight-notes-row>.primary.small{grid-column:1/-1;min-height:42px}
+ .ref-cashier-page .cart-table td:nth-child(4),.ref-cashier-page .cart-table th:nth-child(4){display:table-cell}
+ .ref-cashier-page .cart-empty{height:140px}
+ .ref-cashier-page .payment-card{padding:0}
+ .ref-cashier-page .summary-tabs button{font-size:12px;min-height:43px}
+ .ref-cashier-page .summary-line{font-size:13px}
+ .ref-cashier-page .summary-line label{font-size:12px}
+ .ref-cashier-page .summary-line>b{font-size:15px}
+ .ref-cashier-page .total-highlight>strong{font-size:31px}
+ .ref-cashier-page .total-highlight>b{font-size:21px}
+ .ref-cashier-page .payment-heading{font-size:12px}
+ .ref-cashier-page .payment-methods button{min-height:74px}
+ .ref-cashier-page .payment-methods b{font-size:12px}
+ .ref-cashier-page .payment-cta{min-height:49px;font-size:14px;justify-content:center}
+ .ref-cashier-page .payment-cta>svg:last-child{margin-left:auto}
+ .ref-cashier-page .payment-cta>svg:first-child{margin-right:auto}
+ .ref-cashier-page .receipt-decoration{display:none}
+}
+
+.ref-cashier-page .customer-row>div:last-child{display:block}
+.ref-cashier-page .cart-table th:first-child,.ref-cashier-page .cart-table td:first-child{display:table-cell}

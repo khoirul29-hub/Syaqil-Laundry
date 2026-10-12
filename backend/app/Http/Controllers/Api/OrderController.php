@@ -11,6 +11,7 @@ use App\Models\OrderItem;
 use App\Models\Service;
 use App\Models\StatusHistory;
 use App\Services\OrderCalculationService;
+use App\Services\WhatsAppNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,8 @@ use InvalidArgumentException;
 class OrderController extends Controller
 {
     public function __construct(
-        protected OrderCalculationService $calculationService
+        protected OrderCalculationService $calculationService,
+        protected WhatsAppNotificationService $waService
     ) {}
 
     /**
@@ -51,7 +53,8 @@ class OrderController extends Controller
     }
 
     /**
-     * Menyimpan order transaksi kasir baru dengan kalkulasi otoritatif di backend.
+     * Menyimpan order transaksi kasir baru dengan kalkulasi otoritatif di backend,
+     * dilanjutkan dengan pengiriman notifikasi WhatsApp bukti transaksi secara resilien.
      */
     public function store(Request $request): JsonResponse
     {
@@ -105,7 +108,7 @@ class OrderController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        // Verifikasi keselarasan nominal dengan frontend (deteksi perubahan tarif saat transaksi disusun)
+        // Verifikasi keselarasan nominal dengan frontend
         try {
             $expectedTotal = $this->calculationService->wholeMoney($request->input('expected_total'));
             if ($expectedTotal !== $calc['total']) {
@@ -142,11 +145,11 @@ class OrderController extends Controller
             return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
         }
 
-        // Estimasi selesai berdasarkan durasi layanan terpanjang
+        // Estimasi selesai berdasarkan durasi layanan
         $hours = array_filter(array_map(fn($i) => $i['duration_hours'] ?? null, $calc['items']));
         $dueAt = count($hours) > 0 ? now()->addHours(max($hours)) : null;
 
-        return DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $notes, $dueAt) {
+        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $notes, $dueAt) {
             $order = Order::create([
                 'request_key' => $key,
                 'request_hash' => $fingerprint,
@@ -190,53 +193,66 @@ class OrderController extends Controller
                 'created_at' => now(),
             ]);
 
-            $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
-            return response()->json(['order' => $order->toFrontendArray()], 201);
+            return $order;
         });
+
+        // Pengiriman notifikasi WhatsApp bukti transaksi secara resilien
+        // (Transaksi order tetap aman dan berhasil disimpan apapun kondisi koneksi gateway)
+        $waResult = $this->waService->sendReceiptNotification($order);
+
+        $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
+        $orderArray = $order->toFrontendArray();
+        $orderArray['whatsapp'] = $waResult;
+
+        return response()->json(['order' => $orderArray], 201);
     }
 
     /**
      * Memperbarui status pesanan (Diterima -> Diproses -> Selesai -> Diambil).
+     * Jika berubah menjadi Selesai, memicu notifikasi WhatsApp siap diambil.
      */
     public function updateStatus(Request $request, int|string $id): JsonResponse
     {
         $newStatus = (string)$request->input('status', '');
         $userId = (int)$request->user()->id;
 
-        return DB::transaction(function () use ($id, $newStatus, $userId) {
-            $order = Order::lockForUpdate()->find((int)$id);
-            if (!$order) {
-                return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
-            }
+        try {
+            $order = DB::transaction(function () use ($id, $newStatus, $userId) {
+                $order = Order::lockForUpdate()->find((int)$id);
+                if (!$order) {
+                    return null;
+                }
 
-            if (!$this->calculationService->validTransition($order->status, $newStatus)) {
-                return response()->json([
-                    'error' => 'Status harus diperbarui berurutan. Muat ulang untuk melihat status terbaru.'
-                ], 422);
-            }
+                if (!$this->calculationService->validTransition($order->status, $newStatus)) {
+                    throw new InvalidArgumentException('Status harus diperbarui berurutan. Muat ulang untuk melihat status terbaru.');
+                }
 
-            $order->update(['status' => $newStatus]);
+                $order->update(['status' => $newStatus]);
 
-            StatusHistory::create([
-                'order_id' => $order->id,
-                'status' => $newStatus,
-                'user_id' => $userId,
-                'created_at' => now(),
-            ]);
-
-            // Jika status berubah menjadi Selesai, catat antrean notifikasi pelanggan
-            if ($newStatus === 'Selesai') {
-                Notification::create([
+                StatusHistory::create([
                     'order_id' => $order->id,
-                    'status' => 'not_configured',
-                    'message' => 'WhatsApp belum terhubung. Hubungi pelanggan secara manual.',
+                    'status' => $newStatus,
+                    'user_id' => $userId,
                     'created_at' => now(),
                 ]);
-            }
 
-            $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
-            return response()->json(['order' => $order->toFrontendArray()]);
-        });
+                return $order;
+            });
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        if (!$order) {
+            return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        // Jika status berubah menjadi Selesai, kirim notifikasi WhatsApp siap diambil secara resilien
+        if ($newStatus === 'Selesai') {
+            $this->waService->sendStatusReadyNotification($order);
+        }
+
+        $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
+        return response()->json(['order' => $order->toFrontendArray()]);
     }
 
     /**
@@ -250,5 +266,46 @@ class OrderController extends Controller
         }
 
         return response()->json(['order' => $order->toFrontendArray()]);
+    }
+
+    /**
+     * Data struk terstruktur untuk cetak nota printer thermal (58mm/80mm) dan dokumen PDF.
+     */
+    public function receipt(int|string $id): JsonResponse
+    {
+        $order = Order::with(['items', 'history.user', 'cashier'])->find((int)$id);
+        if (!$order) {
+            return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        $settings = BusinessSetting::allAsArray();
+
+        return response()->json([
+            'order' => $order->toFrontendArray(),
+            'store' => [
+                'name' => $settings['name'] ?? 'Syaqil Laundry',
+                'address' => $settings['address'] ?? 'Jl. Raya Laundry No. 10',
+                'phone' => $settings['phone'] ?? '081234567890',
+            ],
+            'print_at' => now()->format('d M Y H:i:s'),
+        ]);
+    }
+
+    /**
+     * Pengiriman manual / coba ulang notifikasi WhatsApp untuk nota tertentu.
+     */
+    public function sendWhatsApp(Request $request, int|string $id): JsonResponse
+    {
+        $order = Order::find((int)$id);
+        if (!$order) {
+            return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        $type = (string)$request->input('type', $order->status === 'Selesai' ? 'status_ready' : 'receipt');
+        $result = $type === 'status_ready'
+            ? $this->waService->sendStatusReadyNotification($order)
+            : $this->waService->sendReceiptNotification($order);
+
+        return response()->json($result);
     }
 }

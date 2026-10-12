@@ -35,6 +35,7 @@ class BusinessSetting extends Model
         ];
 
         foreach ($rows as $row) {
+            $res[$row->key] = $row->value;
             if ($row->key === 'business_name') $res['name'] = $row->value ?: $res['name'];
             if ($row->key === 'business_address') $res['address'] = $row->value ?: '';
             if ($row->key === 'business_phone') $res['phone'] = $row->value ?: '';

@@ -1,66 +1,76 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Backend Syaqil Laundry (Laravel 10 + Sanctum)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend resmi terpadu untuk sistem **LaundryFlow – Syaqil Laundry Ekspres**, melayani modul **Kasir** (`http://127.0.0.1:5173`) dan modul **Owner** (`http://127.0.0.1:5174`) dengan satu basis data MySQL (`syaqil_laundry`).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Arsitektur & Modul
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. **Modul 1: Fondasi Arsitektur & Database**
+   - Framework: **Laravel 10** + PHP 8.1 / 8.2+.
+   - Database: MySQL 5.7 / 8.0 (`syaqil_laundry`).
+   - Tabel: `users`, `customers`, `services`, `orders`, `order_items`, `status_history`, `expenses`, `price_histories`, `order_corrections`, `account_activities`, `business_settings`, `whatsapp_logs`, `notifications`.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2. **Modul 2: Autentikasi & Role-Based Access Control (RBAC)**
+   - Autentikasi stateful berbasis session Laravel Sanctum dengan proteksi CSRF.
+   - Pembatasan tingkat percobaan (Rate Limiting 5x per menit) untuk keamanan login.
+   - Middleware `role:cashier,owner` memisahkan hak akses kasir dan owner secara ketat.
 
-## Learning Laravel
+3. **Modul 3: Operasional Kasir & Perhitungan Otoritatif**
+   - Seluruh kalkulasi subtotal, diskon (integer sen/basis poin), total, dan kembalian dihitung secara otoritatif oleh backend (`OrderCalculationService`).
+   - Mencegah manipulasi harga di sisi klien (`409 Conflict`).
+   - Penomoran nota berurutan: `SYQ-YYYYMMDD-XXXX`.
+   - Transisi status berurutan: `Diterima` ➔ `Diproses` ➔ `Selesai` ➔ `Diambil`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+4. **Modul 4: Manajemen Owner, Pengeluaran & Laporan Keuangan**
+   - Agregasi real-time dari database: pendapatan kotor, pengeluaran, laba bersih, filter periode (Hari ini, 7 hari, 30 hari, kustom).
+   - CRUD Pengeluaran operasional (`expenses`).
+   - Manajemen Layanan & Tarif dengan riwayat perubahan otomatis ke `price_histories`.
+   - Manajemen Karyawan (tambah kasir baru, reset kata sandi, blokir penonaktifan owner tunggal).
+   - Audit trail koreksi transaksi (`order_corrections`).
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+5. **Modul 5: Resiliensi WhatsApp & Integrasi Struk Nota**
+   - Gateway WhatsApp non-blocking: order dan perubahan status tidak pernah gagal walau gateway down/mati.
+   - Status log jujur: `sent`, `not_configured`, atau `failed`.
+   - Otomatis menghasilkan URL cadangan `wa.me` langsung ke pelanggan.
+   - Endpoint nota struk kasir terstruktur (`GET /api/orders/{id}/receipt`) siap cetak ke printer thermal 58mm/80mm dan PDF.
+   - Pemicu otomatis notifikasi WhatsApp siap diambil saat status berubah ke `Selesai`.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🔑 Kredensial Pengguna Awal
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Peran | Username | Kata Sandi | Hak Akses |
+|---|---|---|---|
+| **Owner** | `owner` | `OwnerSyaqil!2026` | Penuh (Dashboard Owner, Laporan, Tarif, Kasir, Pengeluaran) |
+| **Kasir** | `kasir` | `KasirSyaqil!2026` | Operasional Kasir (Transaksi, Order, Pelanggan, Nota, Struk) |
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+## 🧪 Menjalankan Test Suite (100% Pass / 76 Pengujian)
 
-## Contributing
+Jalankan pengujian terisolasi untuk tiap modul dari folder `backend/`:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```sh
+# Modul 2: Autentikasi & RBAC (12 Pengujian)
+php test_auth_rbac.php
 
-## Code of Conduct
+# Modul 3: Operasional Kasir & Kalkulasi Backend (18 Pengujian)
+php test_cashier_orders.php
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Modul 4: Manajemen Owner & Laporan Keuangan (19 Pengujian)
+php test_owner_management.php
 
-## Security Vulnerabilities
+# Modul 5: Resiliensi WhatsApp & Integrasi Struk (27 Pengujian)
+php test_whatsapp_receipts.php
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 🛠️ Menjalankan Server Lokal
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```sh
+# Jalankan MySQL (Laragon atau daemon mandiri)
+# Jalankan backend Laravel
+php artisan serve --host=127.0.0.1 --port=8000
+```

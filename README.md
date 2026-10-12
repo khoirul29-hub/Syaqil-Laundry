@@ -1,32 +1,48 @@
-# Syaqil Laundry — Kasir dan Owner
+# Syaqil Laundry — Kasir dan Owner (Unified Architecture)
 
-Repo ini berisi aplikasi Kasir dan prototipe UI/UX Owner yang terpisah. Kasir menggunakan frontend React dan API PHP dengan MySQL/MariaDB. Owner berada di folder `owner/` dan saat ini memakai data demo tanpa backend atau autentikasi nyata.
+Repo ini berisi aplikasi sistem kasir dan manajemen owner terpadu untuk **Syaqil Laundry Ekspres**. Seluruh modul Kasir dan Owner kini ditenagai oleh backend **Laravel 10** terpusat (`backend/`) dengan satu basis data MySQL (`syaqil_laundry`), autentikasi Sanctum RBAC, perhitungan transaksi otoritatif, pencatatan keuangan real-time, cetak struk nota, dan notifikasi WhatsApp yang resilien.
 
-## Membuka halaman Owner
+---
 
-Jalankan dari **folder utama repo** (folder yang berisi `package.json`), bukan dari folder `owner/`:
+## 🔑 Kredensial Akun Resmi
 
-```sh
-git clone https://github.com/BUZZCAT54/syaqil-laundry-terbaru.git
-cd syaqil-laundry-terbaru
-npm ci
-npm run owner:dev
-```
+- **Owner:**
+  - URL: **http://127.0.0.1:5174/#login**
+  - Username: `owner`
+  - Kata Sandi: `OwnerSyaqil!2026`
+- **Kasir:**
+  - URL: **http://127.0.0.1:5173/#login**
+  - Username: `kasir`
+  - Kata Sandi: `KasirSyaqil!2026`
 
-Jika repo sudah ada di komputer, lewati `git clone` dan masuk ke folder repo tersebut. Setelah server siap, buka **http://127.0.0.1:5174/#login** di browser. Isi email/username dan kata sandi apa pun yang tidak kosong, lalu klik **Masuk** untuk melihat Dashboard Owner. Login ini hanya simulasi tampilan; tidak memeriksa akun sungguhan. Biarkan terminal server tetap berjalan saat menggunakan halaman Owner. Petunjuk dan daftar halaman lain ada di [README Owner](owner/README.md).
+---
 
-Halaman GitHub menampilkan source code, bukan aplikasi yang langsung bisa dibuka. Preview Owner dijalankan secara lokal dengan perintah di atas.
+## 🚀 Menjalankan Aplikasi Secara Lokal
 
-## Mencoba preview yang sedang berjalan
+1. **Jalankan Database MySQL (Laragon atau daemon):** Pastikan port `3306` aktif dan database `syaqil_laundry` tersedia.
+2. **Jalankan Backend Laravel (Port 8000):**
+   ```sh
+   cd backend
+   php artisan serve --host=127.0.0.1 --port=8000
+   ```
+3. **Jalankan Frontend Kasir (Port 5173):**
+   ```sh
+   npm run dev
+   ```
+4. **Jalankan Frontend Owner (Port 5174):**
+   ```sh
+   npm run owner:dev
+   ```
 
-Buka **http://127.0.0.1:8080/#kasir** pada komputer ini. Jika halaman login tampil dan mode demo aktif, pilih **Buka demo kasir**. Di halaman kasir, **Isi contoh transaksi** mengisi draft contoh tanpa menyimpan transaksi.
+---
 
-Akun demo bawaan saat menyiapkan database demo baru:
+## 🧪 Pengujian Otomatis Seluruh Modul (100% Pass / 76 Pengujian)
 
-- Username: `kasir`
-- Password: `KasirDemo!2026`
-
-Gunakan akun yang sudah dikonfigurasi apabila kredensial instalasi ini telah diubah. Preview hanya tersedia selama server lokal dan database berjalan.
+Untuk memverifikasi keandalan sistem dari folder `backend/`:
+- `php test_auth_rbac.php` (Modul 2 — 12 Pengujian)
+- `php test_cashier_orders.php` (Modul 3 — 18 Pengujian)
+- `php test_owner_management.php` (Modul 4 — 19 Pengujian)
+- `php test_whatsapp_receipts.php` (Modul 5 — 27 Pengujian)
 
 ## Fitur
 

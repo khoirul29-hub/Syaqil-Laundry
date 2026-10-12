@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OwnerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,8 +45,33 @@ Route::middleware(['web'])->group(function () {
             });
         });
 
-        // Owner Only Protected Endpoints (Strictly Owner role)
+        // Modul 4: Manajemen Owner, Pengeluaran & Laporan Keuangan
+        // Khusus peran Owner
         Route::middleware(['role:owner'])->prefix('owner')->group(function () {
+            Route::get('/bootstrap', [OwnerController::class, 'bootstrap']);
+            Route::get('/reports', [OwnerController::class, 'reports']);
+
+            // Pengeluaran
+            Route::post('/expenses', [OwnerController::class, 'storeExpense']);
+            Route::post('/expenses/{id}', [OwnerController::class, 'updateExpense']);
+            Route::delete('/expenses/{id}', [OwnerController::class, 'deleteExpense']);
+
+            // Layanan & Tarif
+            Route::post('/services', [OwnerController::class, 'storeService']);
+            Route::post('/services/{id}', [OwnerController::class, 'updateService']);
+            Route::post('/services/{id}/toggle', [OwnerController::class, 'toggleService']);
+
+            // Karyawan
+            Route::post('/employees', [OwnerController::class, 'storeEmployee']);
+            Route::post('/employees/{id}', [OwnerController::class, 'updateEmployee']);
+            Route::post('/employees/{id}/reset-password', [OwnerController::class, 'resetEmployeePassword']);
+
+            // Koreksi & Pembatalan
+            Route::post('/corrections', [OwnerController::class, 'storeCorrection']);
+
+            // Pengaturan
+            Route::post('/settings', [OwnerController::class, 'updateSettings']);
+
             Route::get('/ping', function (Request $request) {
                 return response()->json([
                     'ok' => true,

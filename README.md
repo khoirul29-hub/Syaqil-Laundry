@@ -36,13 +36,14 @@ Repo ini berisi aplikasi sistem kasir dan manajemen owner terpadu untuk **Syaqil
 
 ---
 
-## 🧪 Pengujian Otomatis Seluruh Modul (100% Pass / 76 Pengujian)
+## 🧪 Pengujian Otomatis Seluruh Modul (100% Pass / 91 Pengujian)
 
 Untuk memverifikasi keandalan sistem dari folder `backend/`:
 - `php test_auth_rbac.php` (Modul 2 — 12 Pengujian)
 - `php test_cashier_orders.php` (Modul 3 — 18 Pengujian)
 - `php test_owner_management.php` (Modul 4 — 19 Pengujian)
 - `php test_whatsapp_receipts.php` (Modul 5 — 27 Pengujian)
+- `php test_payments_e2e.php` (Modul 6 — 15 Pengujian)
 
 ## Fitur
 

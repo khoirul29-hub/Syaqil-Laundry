@@ -38,6 +38,13 @@ Backend resmi terpadu untuk sistem **LaundryFlow – Syaqil Laundry Ekspres**, m
 
 ---
 
+6. **Modul 6: Verifikasi Pembayaran & Uji End-to-End**
+   - Validasi ketat non-tunai di backend: QRIS dan Transfer Bank memerlukan konfigurasi merchant serta konfirmasi kasir.
+   - Penanganan aman `discount_percent` null/omitted.
+   - Pengujian siklus transaksi penuh dari order ➔ status ➔ struk nota ➔ laporan owner real-time.
+
+---
+
 ## 🔑 Kredensial Pengguna Awal
 
 | Peran | Username | Kata Sandi | Hak Akses |
@@ -47,7 +54,7 @@ Backend resmi terpadu untuk sistem **LaundryFlow – Syaqil Laundry Ekspres**, m
 
 ---
 
-## 🧪 Menjalankan Test Suite (100% Pass / 76 Pengujian)
+## 🧪 Menjalankan Test Suite (100% Pass / 91 Pengujian)
 
 Jalankan pengujian terisolasi untuk tiap modul dari folder `backend/`:
 
@@ -63,6 +70,9 @@ php test_owner_management.php
 
 # Modul 5: Resiliensi WhatsApp & Integrasi Struk (27 Pengujian)
 php test_whatsapp_receipts.php
+
+# Modul 6: Verifikasi Pembayaran & Uji End-to-End (15 Pengujian)
+php test_payments_e2e.php
 ```
 
 ---

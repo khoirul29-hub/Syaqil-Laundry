@@ -102,7 +102,7 @@ class OrderController extends Controller
             $calc = $this->calculationService->calculate(
                 $request->input('items', []),
                 $services,
-                $request->input('discount_percent')
+                $request->input('discount_percent', 0)
             );
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);

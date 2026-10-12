@@ -1,0 +1,254 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\BusinessSetting;
+use App\Models\Customer;
+use App\Models\Notification;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Service;
+use App\Models\StatusHistory;
+use App\Services\OrderCalculationService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+
+class OrderController extends Controller
+{
+    public function __construct(
+        protected OrderCalculationService $calculationService
+    ) {}
+
+    /**
+     * Memuat data awal kasir (layanan, pelanggan, order aktif, dan pengaturan toko).
+     */
+    public function bootstrap(): JsonResponse
+    {
+        $customers = Customer::leftJoin('orders', 'customers.id', '=', 'orders.customer_id')
+            ->selectRaw('customers.*, COUNT(orders.id) AS order_count, MAX(orders.created_at) AS last_order')
+            ->groupBy('customers.id')
+            ->orderBy('customers.name')
+            ->get();
+
+        $orders = Order::with(['items', 'history.user', 'latestNotification', 'cashier'])
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn(Order $o) => $o->toFrontendArray())
+            ->values();
+
+        $services = Service::where('active', true)->orderBy('id')->get();
+        $settings = BusinessSetting::allAsArray();
+
+        return response()->json([
+            'customers' => $customers,
+            'orders' => $orders,
+            'services' => $services,
+            'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Menyimpan order transaksi kasir baru dengan kalkulasi otoritatif di backend.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        if (!$request->has('discount_percent')) {
+            return response()->json([
+                'error' => 'Diskon sekarang menggunakan persen. Muat ulang halaman kasir sebelum membayar.'
+            ], 422);
+        }
+
+        $key = (string)$request->input('request_key', '');
+        if (!preg_match('/^[a-zA-Z0-9-]{16,80}$/D', $key)) {
+            return response()->json(['error' => 'Identitas transaksi tidak valid.'], 422);
+        }
+
+        $userId = (int)$request->user()->id;
+        $fingerprint = $this->calculationService->checkoutFingerprint($request->all());
+
+        // Idempotency & deteksi konflik draft
+        $existing = Order::with(['items', 'history.user', 'latestNotification', 'cashier'])
+            ->where('request_key', $key)
+            ->first();
+
+        if ($existing) {
+            if ((int)$existing->cashier_id !== $userId) {
+                return response()->json(['error' => 'Konflik identitas transaksi.'], 409);
+            }
+            if (!$existing->request_hash || !hash_equals((string)$existing->request_hash, $fingerprint)) {
+                return response()->json([
+                    'error' => 'Draft ini memakai nomor yang sudah digunakan pada nota ' . $existing->number . '. Isinya berbeda dan belum disimpan. Periksa nota tersebut sebelum membuat nomor baru.',
+                    'code' => 'draft_conflict',
+                ], 409);
+            }
+            return response()->json(['order' => $existing->toFrontendArray()]);
+        }
+
+        $customerId = (int)$request->input('customer_id', 0);
+        $customer = Customer::find($customerId);
+        if (!$customer) {
+            return response()->json(['error' => 'Pilih pelanggan terlebih dahulu.'], 422);
+        }
+
+        $services = Service::where('active', true)->get()->keyBy('id')->toArray();
+
+        try {
+            $calc = $this->calculationService->calculate(
+                $request->input('items', []),
+                $services,
+                $request->input('discount_percent')
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        // Verifikasi keselarasan nominal dengan frontend (deteksi perubahan tarif saat transaksi disusun)
+        try {
+            $expectedTotal = $this->calculationService->wholeMoney($request->input('expected_total'));
+            if ($expectedTotal !== $calc['total']) {
+                return response()->json([
+                    'error' => 'Harga layanan berubah. Muat ulang halaman dan susun ulang item sebelum membayar.'
+                ], 409);
+            }
+        } catch (InvalidArgumentException) {
+            return response()->json([
+                'error' => 'Harga layanan berubah. Muat ulang halaman dan susun ulang item sebelum membayar.'
+            ], 409);
+        }
+
+        $paymentMethod = (string)$request->input('method', '');
+        $settings = BusinessSetting::allAsArray();
+        $configured = $paymentMethod === 'qris'
+            ? !empty($settings['qris_image'])
+            : (!empty($settings['bank_name']) && !empty($settings['bank_account']) && !empty($settings['bank_holder']));
+
+        try {
+            $payment = $this->calculationService->validatePayment(
+                $paymentMethod,
+                $request->input('paid', 0),
+                $calc['total'],
+                $configured,
+                $request->boolean('confirmed')
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        $notes = trim((string)$request->input('notes', ''));
+        if (mb_strlen($notes) > 1000) {
+            return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
+        }
+
+        // Estimasi selesai berdasarkan durasi layanan terpanjang
+        $hours = array_filter(array_map(fn($i) => $i['duration_hours'] ?? null, $calc['items']));
+        $dueAt = count($hours) > 0 ? now()->addHours(max($hours)) : null;
+
+        return DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $notes, $dueAt) {
+            $order = Order::create([
+                'request_key' => $key,
+                'request_hash' => $fingerprint,
+                'customer_id' => $customer->id,
+                'cashier_id' => $userId,
+                'customer_name' => $customer->name,
+                'customer_phone' => $customer->phone,
+                'subtotal' => $calc['subtotal'],
+                'discount_percent' => $calc['discount_percent'],
+                'discount' => $calc['discount'],
+                'total' => $calc['total'],
+                'method' => $paymentMethod,
+                'paid' => $payment['paid'],
+                'change_amount' => $payment['change'],
+                'status' => 'Diterima',
+                'notes' => $notes,
+                'due_at' => $dueAt,
+                'created_at' => now(),
+            ]);
+
+            $orderNumber = 'SYQ-' . now()->format('Ymd') . '-' . str_pad((string)$order->id, 4, '0', STR_PAD_LEFT);
+            $order->update(['number' => $orderNumber]);
+
+            foreach ($calc['items'] as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'service_id' => $item['service_id'],
+                    'service_name' => $item['service_name'],
+                    'unit' => $item['unit'],
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'category' => $item['category'],
+                    'subtotal' => $item['subtotal'],
+                ]);
+            }
+
+            StatusHistory::create([
+                'order_id' => $order->id,
+                'status' => 'Diterima',
+                'user_id' => $userId,
+                'created_at' => now(),
+            ]);
+
+            $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
+            return response()->json(['order' => $order->toFrontendArray()], 201);
+        });
+    }
+
+    /**
+     * Memperbarui status pesanan (Diterima -> Diproses -> Selesai -> Diambil).
+     */
+    public function updateStatus(Request $request, int|string $id): JsonResponse
+    {
+        $newStatus = (string)$request->input('status', '');
+        $userId = (int)$request->user()->id;
+
+        return DB::transaction(function () use ($id, $newStatus, $userId) {
+            $order = Order::lockForUpdate()->find((int)$id);
+            if (!$order) {
+                return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
+            }
+
+            if (!$this->calculationService->validTransition($order->status, $newStatus)) {
+                return response()->json([
+                    'error' => 'Status harus diperbarui berurutan. Muat ulang untuk melihat status terbaru.'
+                ], 422);
+            }
+
+            $order->update(['status' => $newStatus]);
+
+            StatusHistory::create([
+                'order_id' => $order->id,
+                'status' => $newStatus,
+                'user_id' => $userId,
+                'created_at' => now(),
+            ]);
+
+            // Jika status berubah menjadi Selesai, catat antrean notifikasi pelanggan
+            if ($newStatus === 'Selesai') {
+                Notification::create([
+                    'order_id' => $order->id,
+                    'status' => 'not_configured',
+                    'message' => 'WhatsApp belum terhubung. Hubungi pelanggan secara manual.',
+                    'created_at' => now(),
+                ]);
+            }
+
+            $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
+            return response()->json(['order' => $order->toFrontendArray()]);
+        });
+    }
+
+    /**
+     * Detail satu pesanan.
+     */
+    public function show(int|string $id): JsonResponse
+    {
+        $order = Order::with(['items', 'history.user', 'latestNotification', 'cashier'])->find((int)$id);
+        if (!$order) {
+            return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        return response()->json(['order' => $order->toFrontendArray()]);
+    }
+}

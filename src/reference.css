@@ -15,7 +15,7 @@ body{background:radial-gradient(ellipse at 50% 38%,#7956ff 0,#684aff 78%)}
 .reference-shell .sidebar-bottom{padding-top:12px}
 .reference-sidebar-art{width:100%;aspect-ratio:216/318;position:relative;overflow:hidden}
 .reference-sidebar-art img{position:absolute;width:711.1112%;max-width:none;left:-16.2037%;top:-209.1195%;height:auto}
-.reference-shell .main-shell{background:#fff;overflow:hidden}
+.reference-shell .main-shell{background:#fff;overflow:visible;min-width:0;flex:1}
 .reference-shell .topbar{height:56px;padding:0 16px;gap:16px;border-bottom:0}
 .reference-shell .global-search{width:46%;max-width:550px;height:41px;color:#242190;background:#f1f3fa}
 .reference-shell .global-search input{font-size:12px}

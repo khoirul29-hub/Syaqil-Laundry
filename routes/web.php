@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/login', function () {
+    return redirect('/#login');
+})->name('login');
+
 Route::get('/{any?}', function () {
     $spaPath = public_path('index.html');
     if (file_exists($spaPath)) {

@@ -1,6 +1,7 @@
 :root{--ow-accent:#034bff;--ow-muted:#4e5982;--ow-border:#e0e7f6;--owner-sidebar-width:204px;--owner-sidebar-compact-width:72px}
-body{background:#6548ff;overflow:hidden}
-#root{height:100dvh;min-height:0;display:flow-root}
+html,body{min-height:100%;overflow-x:hidden;overflow-y:auto}
+body{background:#6548ff}
+#root{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 .ow-reference-shell{width:calc(100% - 44px);max-width:1600px;height:calc(100dvh - 48px);min-height:540px;margin:24px auto;display:flex;background:white;border-radius:17px;overflow:hidden;box-shadow:0 8px 32px #2c16ab30}
 .ow-reference-shell .owner-sidebar{position:relative;inset:auto;flex:none;height:100%;width:var(--owner-sidebar-width);background:linear-gradient(115deg,#034acb,#0343b9);box-shadow:none}
 .ow-reference-shell .owner-sidebar-head{height:50px;padding:0 17px;justify-content:space-between}
@@ -22,8 +23,8 @@ body{background:#6548ff;overflow:hidden}
 .owner-sidebar-art{display:block;width:100%;height:auto;max-height:32dvh;flex:none;overflow:hidden}
 .owner-sidebar-art--sidebarCorrection{border-radius:12px}
 @media(max-width:767px){.owner-sidebar-art{max-height:180px}.mg-clean-shell .owner-sidebar-art{max-height:160px}}
-.ow-reference-shell .owner-main,.ow-reference-shell.is-compact .owner-main{margin:0;min-height:0;height:100%;flex:1}
-.ow-reference-shell .owner-topbar{position:relative;top:auto;height:58px;min-height:58px;padding:0 15px;border:0;gap:18px;background:#fff}
+.ow-reference-shell .owner-main,.ow-reference-shell.is-compact .owner-main{margin:0;min-height:0;height:100%;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ow-reference-shell .owner-topbar{position:relative;top:auto;height:58px;min-height:58px;padding:0 15px;border:0;gap:18px;background:#fff;flex:none}
 .ow-reference-shell .owner-search{flex:1;max-width:510px;width:auto;height:39px;border-radius:24px;background:#f0f3fa;border:0;font-size:12px}
 .ow-reference-shell .owner-search input{font-size:12px}.ow-reference-shell .owner-search input::placeholder{color:#536083}
 .ow-reference-shell .owner-search svg{flex:none;color:#152181}
@@ -35,7 +36,7 @@ body{background:#6548ff;overflow:hidden}
 .ow-reference-shell .owner-notification-button{position:relative;background:#f0f5ff;border:0}
 .owner-notification-button>i{position:absolute;right:6px;top:3px;width:6px;height:6px;border:1px solid white;border-radius:50%;background:#ff543b}
 .ow-profile-links{border-top:1px solid var(--ow-border);margin-top:12px;padding-top:8px}.ow-profile-links button{display:flex;align-items:center;gap:8px;background:none;border:0;color:#1748b9;width:100%;padding:8px 0;font-size:12px}.ow-profile-links button svg:last-child{margin-left:auto}
-.ow-reference-shell .owner-content{overflow:auto;scrollbar-width:thin;scrollbar-color:#c9d4ed transparent;background:#fff}
+.ow-reference-shell .owner-content{flex:1;min-height:0;max-height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#c9d4ed transparent;background:#fff}
 .ow-reference-shell .owner-content>.ui-loading{padding:28px}
 .ow-page{padding:0 12px 10px;color:#171831}
 .ow-art{background-repeat:no-repeat;background-color:#dfff36;overflow:hidden;border-radius:10px}

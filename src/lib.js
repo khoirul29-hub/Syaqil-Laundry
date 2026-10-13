@@ -15,9 +15,20 @@ export async function api(path,body,{timeout=15000}={}) {
  const timer=setTimeout(()=>controller.abort(),timeout);
  try {
   const url=path.startsWith('http')?path:API_BASE+path;
-  const res=await fetch(url,{signal:controller.signal,method:body===undefined?'GET':'POST',credentials:'include',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},...(body!==undefined?{body:JSON.stringify(body)}:{})});
+  const res=await fetch(url,{
+   signal:controller.signal,
+   method:body===undefined?'GET':'POST',
+   credentials:'include',
+   headers:{
+    'Accept':'application/json',
+    'X-Requested-With':'XMLHttpRequest',
+    'Content-Type':'application/json',
+    'X-CSRF-Token':csrf,
+   },
+   ...(body!==undefined?{body:JSON.stringify(body)}:{})
+  });
   const data=await res.json();
-  if(!res.ok) { const error=new Error(data.error||'Permintaan gagal.'); error.status=res.status; error.code=data.code; error.connection=res.status>=500; throw error; }
+  if(!res.ok) { const error=new Error(data.error||data.message||'Permintaan gagal.'); error.status=res.status; error.code=data.code; error.connection=res.status>=500; throw error; }
   if(!data||typeof data!=='object'||Array.isArray(data)) throw new SyntaxError('Respons server tidak valid.');
   if(data.csrf) csrf=data.csrf;
   return data;

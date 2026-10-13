@@ -9,8 +9,13 @@
     "serve": "php artisan serve --host=127.0.0.1 --port=8000",
     "owner:dev": "vite --config owner/vite.config.js",
     "owner:build": "vite build --config owner/vite.config.js",
-    "test": "php tests/domain.php",
-    "test:backend": "php test_auth_rbac.php"
+    "test": "php test_cashier_orders.php",
+    "test:all": "php test_cashier_orders.php && php test_whatsapp_flow_comprehensive.php && php test_owner_management.php && php test_auth_rbac.php && php test_payments_e2e.php",
+    "test:cashier": "php test_cashier_orders.php",
+    "test:whatsapp": "php test_whatsapp_flow_comprehensive.php",
+    "test:owner": "php test_owner_management.php",
+    "test:auth": "php test_auth_rbac.php",
+    "test:payments": "php test_payments_e2e.php"
   },
   "dependencies": {
     "@fontsource/anton": "^5.2.0",

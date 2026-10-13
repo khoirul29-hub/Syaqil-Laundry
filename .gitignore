@@ -2,8 +2,11 @@ node_modules/
 dist/
 dist-owner/
 .env
+.env.*.bak
+*.bak
 storage/
 *.log
+cookies.txt
 
 # Backend Laravel gitignore
 backend/vendor/
@@ -16,3 +19,4 @@ backend/storage/framework/cache/data/*
 backend/storage/framework/sessions/*
 backend/storage/framework/views/*
 backend/bootstrap/cache/*.php
+

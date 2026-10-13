@@ -34,6 +34,7 @@ class OwnerController extends Controller
 
         $receipts = $orders->map(function (Order $order) {
             $firstItem = $order->items->first();
+            $totalWeight = (float) $order->items->sum('quantity');
             return [
                 'id' => (int)$order->id,
                 'number' => $order->number ?: 'SYQ-' . $order->id,
@@ -47,15 +48,19 @@ class OwnerController extends Controller
                     'cash' => 'Tunai',
                     'qris' => 'QRIS',
                     'transfer' => 'Transfer',
+                    'later' => 'Bayar Nanti',
                     default => ucfirst($order->method),
                 },
                 'amount' => (int)$order->total,
+                'total' => (int)$order->total,
+                'weight' => $totalWeight > 0 ? $totalWeight : 1.0,
                 'subtotal' => (int)$order->subtotal,
                 'discount' => (int)$order->discount,
                 'discount_percent' => (float)$order->discount_percent,
                 'paid' => (int)$order->paid,
                 'change_amount' => (int)$order->change_amount,
                 'status' => $order->status,
+                'payment_status' => $order->payment_status ?: 'paid',
                 'notes' => $order->notes,
                 'items' => $order->items->map(fn(OrderItem $i) => [
                     'id' => $i->id,

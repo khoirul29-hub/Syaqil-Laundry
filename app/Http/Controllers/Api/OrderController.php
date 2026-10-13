@@ -58,11 +58,7 @@ class OrderController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        if (!$request->has('discount_percent')) {
-            return response()->json([
-                'error' => 'Diskon sekarang menggunakan persen. Muat ulang halaman kasir sebelum membayar.'
-            ], 422);
-        }
+        $discountPercent = $request->input('discount_percent', 0);
 
         $key = (string)$request->input('request_key', '');
         if (!preg_match('/^[a-zA-Z0-9-]{16,80}$/D', $key)) {
@@ -102,7 +98,7 @@ class OrderController extends Controller
             $calc = $this->calculationService->calculate(
                 $request->input('items', []),
                 $services,
-                $request->input('discount_percent', 0)
+                $discountPercent
             );
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -145,16 +141,16 @@ class OrderController extends Controller
             return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
         }
 
-        $perfume = trim((string)$request->input('perfume', ''));
-        if (mb_strlen($perfume) > 100) {
-            $perfume = mb_substr($perfume, 0, 100);
-        }
+        // Pilihan parfum dihapus sesuai instruksi
+        $perfume = null;
 
         // Estimasi selesai berdasarkan durasi layanan
         $hours = array_filter(array_map(fn($i) => $i['duration_hours'] ?? null, $calc['items']));
         $dueAt = count($hours) > 0 ? now()->addHours(max($hours)) : null;
 
-        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $notes, $perfume, $dueAt) {
+        $paymentStatus = $payment['payment_status'] ?? ($paymentMethod === 'later' ? 'unpaid' : 'paid');
+
+        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $paymentStatus, $notes, $perfume, $dueAt) {
             $order = Order::create([
                 'request_key' => $key,
                 'request_hash' => $fingerprint,
@@ -169,9 +165,10 @@ class OrderController extends Controller
                 'method' => $paymentMethod,
                 'paid' => $payment['paid'],
                 'change_amount' => $payment['change'],
+                'payment_status' => $paymentStatus,
                 'status' => 'Diterima',
                 'notes' => $notes,
-                'perfume' => $perfume ?: null,
+                'perfume' => $perfume,
                 'public_token' => bin2hex(random_bytes(16)),
                 'due_at' => $dueAt,
                 'created_at' => now(),
@@ -347,7 +344,7 @@ class OrderController extends Controller
      */
     public function publicReceiptJson(string $token): JsonResponse
     {
-        $order = Order::with(['items', 'history.user', 'cashier'])
+        $order = Order::with(['items', 'history'])
             ->where('public_token', $token)
             ->first();
 
@@ -358,7 +355,7 @@ class OrderController extends Controller
         $settings = BusinessSetting::allAsArray();
 
         return response()->json([
-            'order' => $order->toFrontendArray(),
+            'order' => $order->toPublicReceiptArray(),
             'store' => [
                 'name' => $settings['name'] ?? config('app.business_name', 'Syaqil Laundry'),
                 'address' => $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang'),
@@ -366,5 +363,43 @@ class OrderController extends Controller
             ],
             'print_at' => now()->format('d M Y H:i:s'),
         ]);
+    }
+
+    /**
+     * Pelunasan pembayaran untuk pesanan yang berstatus belum bayar.
+     */
+    public function settlePayment(Request $request, int|string $id): JsonResponse
+    {
+        $order = Order::find((int)$id);
+        if (!$order) {
+            return response()->json(['error' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        if ($order->payment_status === 'paid' && $order->method !== 'later') {
+            return response()->json(['error' => 'Pesanan ini sudah lunas.'], 422);
+        }
+
+        $method = (string)$request->input('method', 'cash');
+        try {
+            $payment = $this->calculationService->validatePayment(
+                $method,
+                $request->input('paid', $order->total),
+                $order->total,
+                true,
+                true
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        $order->update([
+            'method' => $method,
+            'paid' => $payment['paid'],
+            'change_amount' => $payment['change'],
+            'payment_status' => 'paid',
+        ]);
+
+        $order->load(['items', 'history.user', 'latestNotification', 'cashier']);
+        return response()->json(['order' => $order->toFrontendArray()]);
     }
 }

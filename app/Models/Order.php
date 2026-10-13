@@ -30,6 +30,7 @@ class Order extends Model
         'method',
         'paid',
         'change_amount',
+        'payment_status',
         'status',
         'notes',
         'perfume',
@@ -97,7 +98,8 @@ class Order extends Model
     {
         $arr = $this->toArray();
         $arr['cashier_name'] = $this->cashier ? $this->cashier->name : null;
-        $arr['perfume'] = $this->perfume;
+        $arr['payment_status'] = $this->payment_status ?: ($this->method === 'later' ? 'unpaid' : 'paid');
+        $arr['perfume'] = null;
         $arr['public_token'] = $this->public_token;
         $arr['items'] = $this->items->map(function ($item) {
             return [
@@ -126,6 +128,56 @@ class Order extends Model
             'created_at' => $latestNotif->created_at ? $latestNotif->created_at->format('Y-m-d H:i:s') : null,
         ] : null;
 
+        $arr['public_url'] = $this->public_token
+            ? app(\App\Services\WhatsAppNotificationService::class)->getPublicReceiptUrl($this->public_token)
+            : null;
+
         return $arr;
+    }
+
+    /**
+     * Format data nota publik khusus untuk pelanggan via tautan nota digital.
+     * Hanya mengekspos informasi yang diizinkan untuk pelanggan, tanpa membuka struktur internal
+     * seperti ID database internal, identitas kasir, hash idempotensi, atau log gateway.
+     */
+    public function toPublicReceiptArray(): array
+    {
+        return [
+            'number' => $this->number,
+            'customer_name' => $this->customer_name,
+            'customer_phone' => $this->customer_phone,
+            'status' => $this->status,
+            'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
+            'due_at' => $this->due_at ? $this->due_at->format('Y-m-d H:i:s') : null,
+            'subtotal' => (int)$this->subtotal,
+            'discount_percent' => (float)$this->discount_percent,
+            'discount' => (int)$this->discount,
+            'total' => (int)$this->total,
+            'method' => $this->method,
+            'paid' => (int)$this->paid,
+            'change_amount' => (int)$this->change_amount,
+            'payment_status' => $this->payment_status ?: ($this->method === 'later' ? 'unpaid' : 'paid'),
+            'notes' => $this->notes,
+            'public_token' => $this->public_token,
+            'public_url' => $this->public_token
+                ? app(\App\Services\WhatsAppNotificationService::class)->getPublicReceiptUrl($this->public_token)
+                : null,
+            'items' => $this->items->map(function ($item) {
+                return [
+                    'service_name' => $item->service_name,
+                    'unit' => $item->unit,
+                    'price' => (int)$item->price,
+                    'quantity' => (float)$item->quantity,
+                    'category' => $item->category,
+                    'subtotal' => (int)$item->subtotal,
+                ];
+            })->values()->all(),
+            'history' => $this->history->map(function ($h) {
+                return [
+                    'status' => $h->status,
+                    'created_at' => $h->created_at ? $h->created_at->format('Y-m-d H:i:s') : null,
+                ];
+            })->values()->all(),
+        ];
     }
 }

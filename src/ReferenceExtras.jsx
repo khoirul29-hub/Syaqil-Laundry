@@ -9,8 +9,8 @@ import './reports.css';
 const label=date=>new Date(date+'T00:00:00Z').toLocaleDateString('id-ID',{day:'numeric',month:'short',timeZone:'UTC'});
 const colors=['#2372ff','#9b4dff','#ff503e','#ffcf4c'];
 const statusColors=['#59ce68','#ffda49','#2875ff','#b53cff','#ff5440'];
-const columns=['No. Nota','Tanggal & Jam','Pelanggan','Layanan','Berat (kg)','Subtotal','Diskon (%)','Potongan','Total','Metode Pembayaran','Status Pesanan'];
-function exportRows(orders){return orders.map(o=>[o.number,o.created_at,o.customer_name,[...new Set(o.items.map(i=>i.service_name))].join(', '),o.items.filter(i=>i.unit==='kg').reduce((s,i)=>s+Number(i.quantity),0),Number(o.subtotal),o.discount_percent==null?'':Number(o.discount_percent),Number(o.discount),Number(o.total),methodName[o.method]||o.method,o.status]);}
+const columns=['No. Nota','Tanggal & Jam','Pelanggan','Layanan','Berat (kg)','Subtotal','Total','Metode Pembayaran','Status Pembayaran','Status Pesanan'];
+function exportRows(orders){return orders.map(o=>[o.number,o.created_at,o.customer_name,[...new Set(o.items.map(i=>i.service_name))].join(', '),o.items.filter(i=>i.unit==='kg').reduce((s,i)=>s+Number(i.quantity),0),Number(o.subtotal),Number(o.total),methodName[o.method]||o.method,o.payment_status==='unpaid'||o.method==='later'?'Belum Bayar':'Lunas',o.status]);}
 function Donut({parts,total,status=false}){
  let cursor=0;const stops=parts.map(p=>{const start=cursor;cursor+=total?p.value/total*100:0;return `${p.color} ${start}% ${cursor}%`;});
  return <div className="biz-distribution"><div className="biz-donut" role="img" aria-label={parts.map(p=>`${p.name}: ${p.value}`).join(', ')} style={{background:total?`conic-gradient(${stops.join(',')})`:'#edf1f8'}}><div><strong>{quantity(total)}</strong><span>{status?'Total':'Transaksi'}</span></div></div><div className="biz-legend">{parts.map(p=><div key={p.name}><i style={{background:p.color}}/><span>{p.name}</span>{status&&<b>{p.value}</b>}<small>{total?Math.round(p.value/total*100):0}%</small></div>)}</div></div>;

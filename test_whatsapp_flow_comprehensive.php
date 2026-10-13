@@ -127,8 +127,7 @@ $waInfo = $orderData['whatsapp'] ?? [];
 $waUrl = $waInfo['wa_url'] ?? '';
 
 assertTest("5. Nomor nota berawalan SYQ- dihasilkan", str_starts_with($orderNumber, 'SYQ-'));
-assertTest("6. Token nota digital unik dan sulit ditebak dihasilkan", !empty($publicToken) && strlen($publicToken) >= 16);
-assertTest("7. Parfum 'Ocean Fresh' tersimpan pada order", ($orderData['perfume'] ?? '') === 'Ocean Fresh');
+assertTest("7. Pilihan parfum dihapus dari data order", empty($orderData['perfume']));
 
 // 5. Cek format Click to Chat WhatsApp
 assertTest("8. WhatsApp Click to Chat URL dihasilkan", !empty($waUrl) && str_starts_with($waUrl, 'https://wa.me/'));
@@ -150,24 +149,23 @@ assertTest("16. Pesan WA memuat Rincian Layanan (jumlah, satuan, harga)",
     str_contains($messageText, '4 kg') &&
     str_contains($messageText, 'Rp ')
 );
-assertTest("17. Pesan WA memuat Parfum yang dipilih", str_contains($messageText, 'Ocean Fresh'));
+assertTest("17. Pesan WA TIDAK memuat baris parfum (telah dihapus)", !str_contains($messageText, 'Parfum:'));
 assertTest("18. Pesan WA memuat Status Pembayaran Lunas", str_contains($messageText, 'Lunas'));
-assertTest("19. Pesan WA memuat Subtotal", str_contains($messageText, 'Subtotal: Rp ' . number_format($subtotal, 0, ',', '.')));
-assertTest("20. Pesan WA memuat Diskon", str_contains($messageText, 'Diskon') && str_contains($messageText, '10%'));
-assertTest("21. Pesan WA memuat Total Bayar", str_contains($messageText, 'Total') && str_contains($messageText, 'Rp ' . number_format($expectedTotal, 0, ',', '.')));
-assertTest("22. Pesan WA memuat Tautan Nota Digital yang memuat token publik",
+assertTest("19. Pesan WA TIDAK memuat baris diskon (telah dihapus)", !str_contains($messageText, 'Diskon:'));
+assertTest("20. Pesan WA memuat Total Bayar", str_contains($messageText, 'Total'));
+assertTest("21. Pesan WA memuat Tautan Nota Digital yang memuat token publik",
     str_contains($messageText, '/nota/' . $publicToken)
 );
-assertTest("23. Pesan WA memuat Ucapan Terima Kasih", str_contains($messageText, 'Terima kasih'));
+assertTest("22. Pesan WA memuat Ucapan Terima Kasih", str_contains($messageText, 'Terima kasih'));
 
 // 7. Uji Akses Tautan Nota Digital Publik (GET /nota/{token}) - Tanpa Login
 $receiptPageRes = callApp('/nota/' . $publicToken, 'GET', [], [], ['HTTP_ACCEPT' => 'text/html']);
-assertTest("24. Halaman nota digital publik dapat diakses tanpa autentikasi (HTTP 200)", $receiptPageRes['status'] === 200);
-assertTest("25. Halaman nota digital memuat nama pelanggan", str_contains($receiptPageRes['content'], 'Siti Rahmawati'));
-assertTest("26. Halaman nota digital memuat nomor nota", str_contains($receiptPageRes['content'], $orderNumber));
-assertTest("27. Halaman nota digital memuat parfum 'Ocean Fresh'", str_contains($receiptPageRes['content'], 'Ocean Fresh'));
-assertTest("28. Halaman nota digital memuat status LUNAS", str_contains($receiptPageRes['content'], 'LUNAS'));
-assertTest("29. Halaman nota digital memuat tombol cetak/simpan PDF", str_contains($receiptPageRes['content'], 'window.print()'));
+assertTest("23. Halaman nota digital publik dapat diakses tanpa autentikasi (HTTP 200)", $receiptPageRes['status'] === 200);
+assertTest("24. Halaman nota digital memuat nama pelanggan", str_contains($receiptPageRes['content'], 'Siti Rahmawati'));
+assertTest("25. Halaman nota digital memuat nomor nota", str_contains($receiptPageRes['content'], $orderNumber));
+assertTest("26. Halaman nota digital TIDAK memuat parfum (telah dihapus)", !str_contains($receiptPageRes['content'], 'Ocean Fresh'));
+assertTest("27. Halaman nota digital memuat status LUNAS", str_contains($receiptPageRes['content'], 'LUNAS'));
+assertTest("28. Halaman nota digital memuat tombol cetak/simpan PDF", str_contains($receiptPageRes['content'], 'window.print()'));
 
 // 8. Uji Token Salah (GET /nota/token_palsu_12345)
 $invalidTokenRes = callApp('/nota/token_palsu_12345', 'GET', [], [], ['HTTP_ACCEPT' => 'text/html']);

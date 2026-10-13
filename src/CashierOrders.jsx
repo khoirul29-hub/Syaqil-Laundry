@@ -106,9 +106,9 @@ export default function CashierOrders({data,onSelect,print,go}) {
   }catch(e){console.error(e);}
  }
  function excel(){
-  exportExcel('Pesanan-Syaqil',['No. Nota','Tanggal','Pelanggan','Layanan','Berat (kg)','Total','Diskon (%)','Potongan','Metode','Status'],orders.map(order=>[
+  exportExcel('Pesanan-Syaqil',['No. Nota','Tanggal','Pelanggan','Layanan','Berat (kg)','Total','Pembayaran','Metode','Status'],orders.map(order=>[
    order.number,order.created_at,order.customer_name,order.items.map(item=>item.service_name).join(', '),orderWeight(order),Number(order.total),
-   order.discount_percent==null?'':Number(order.discount_percent),Number(order.discount),methodName[order.method],order.status
+   order.payment_status==='unpaid'||order.method==='later'?'Belum Bayar':'Lunas',methodName[order.method]||order.method,order.status
   ]));
  }
  return <div className="ref-page cashier-orders-page">
@@ -136,11 +136,13 @@ export default function CashierOrders({data,onSelect,print,go}) {
     <ErrorBox message={invalidRange?'Tanggal akhir harus setelah tanggal awal.':pdfError}/>
     {pdfBusy&&<p className="orders-pdf-status" role="status">Menyiapkan PDF nota...</p>}
     <div className="ref-table-wrap orders-table-wrap" tabIndex={0} aria-label="Daftar pesanan, geser untuk melihat seluruh kolom">
-     <table className="ref-table orders-table"><thead><tr><th>No.</th><th>No. Pesanan</th><th>Pelanggan</th><th>Layanan</th><th>Berat</th><th>Total</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+     <table className="ref-table orders-table"><thead><tr><th>No.</th><th>No. Pesanan</th><th>Pelanggan</th><th>Layanan</th><th>Berat</th><th>Total</th><th>Pembayaran</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
       <tbody>{visible.map((order,index)=><tr key={order.id}>
        <td>{(current-1)*10+index+1}</td><td><button className="ref-table-link" onClick={()=>onSelect(order)}>{order.number}</button></td>
        <td>{order.customer_name}</td><td><ServiceName name={order.items[0]?.service_name}/>{order.items.length>1&&<small className="ref-extra-items">+{order.items.length-1} layanan</small>}</td>
-       <td>{quantity(orderWeight(order))} kg</td><td>{rupiah(order.total)}</td><td><Status value={order.status}/></td><td>{dateText(order.created_at,true)}</td>
+       <td>{quantity(orderWeight(order))} kg</td><td>{rupiah(order.total)}</td>
+       <td>{order.payment_status==='unpaid'||order.method==='later'?(<span style={{display:'inline-flex',alignItems:'center',gap:'3px',padding:'3px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'700',background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626'}}>Belum Bayar</span>):(<span style={{display:'inline-flex',alignItems:'center',gap:'3px',padding:'3px 8px',borderRadius:'4px',fontSize:'11px',fontWeight:'600',background:'#ecfdf5',border:'1px solid #a7f3d0',color:'#059669'}}>Lunas</span>)}</td>
+       <td><Status value={order.status}/></td><td>{dateText(order.created_at,true)}</td>
        <td><div className="orders-row-actions">
         <button aria-label={'Lihat '+order.number} title="Lihat detail" onClick={()=>onSelect(order)}><Eye size={19}/></button>
         <button aria-label={'Cetak '+order.number} title="Cetak nota" onClick={()=>print(order)}><Printer size={19}/></button>

@@ -542,14 +542,6 @@
                 @endforeach
             </div>
 
-            <!-- Parfum -->
-            @if(!empty($order->perfume) && $order->perfume !== '-' && strtolower($order->perfume) !== 'tanpa parfum')
-                <div class="perfume-tag">
-                    <span>🌸</span>
-                    <span>Pilihan Parfum: <strong>{{ $order->perfume }}</strong></span>
-                </div>
-            @endif
-
             <!-- Catatan -->
             @if(!empty($order->notes))
                 <div class="notes-card">
@@ -561,25 +553,24 @@
             <!-- Payment Summary -->
             <div class="section-title">Rincian Pembayaran</div>
             <div class="payment-summary">
-                <div class="summary-row">
-                    <span>Subtotal</span>
-                    <span>Rp {{ number_format($order->subtotal, 0, ',', '.') }}</span>
-                </div>
-                @if((int)$order->discount > 0)
-                    <div class="summary-row discount">
-                        <span>Potongan Diskon ({{ $order->discount_percent }}%)</span>
-                        <span>-Rp {{ number_format($order->discount, 0, ',', '.') }}</span>
-                    </div>
-                @endif
-                <div class="summary-divider"></div>
                 <div class="summary-row total">
                     <span>Total Pembayaran</span>
                     <span>Rp {{ number_format($order->total, 0, ',', '.') }}</span>
                 </div>
-                <div class="payment-status-badge">
-                    <span>Metode: {{ ucfirst($order->method) }}</span>
-                    <span>&#10003; LUNAS</span>
-                </div>
+                @php
+                    $isUnpaid = ($order->payment_status === 'unpaid') || ($order->method === 'later');
+                @endphp
+                @if($isUnpaid)
+                    <div class="payment-status-badge" style="background:#fffbeb;border-color:#fde68a;color:#b45309;">
+                        <span>Metode: Bayar Nanti</span>
+                        <span>&#9888; BELUM BAYAR</span>
+                    </div>
+                @else
+                    <div class="payment-status-badge">
+                        <span>Metode: {{ ucfirst($order->method) }}</span>
+                        <span>&#10003; LUNAS</span>
+                    </div>
+                @endif
             </div>
 
             <!-- Action Buttons -->

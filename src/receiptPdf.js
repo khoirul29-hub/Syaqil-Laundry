@@ -15,7 +15,7 @@ export async function downloadReceipt(order,settings) {
  if(settings?.demo)line('NOTA DEMO - BUKAN TRANSAKSI NYATA',{size:6,center:true});rule();
  line(order.number,{bold:true});line(dateText(order.created_at,true));line('Pelanggan: '+order.customer_name);if(order.cashier_name)line('Kasir: '+order.cashier_name);rule();
  for(const item of order.items){line(item.category+' / '+item.service_name,{bold:true});line(`${quantity(item.quantity)} ${item.unit} x ${rupiah(item.price)}`);money('Subtotal item',item.subtotal);}
- rule();money('Subtotal',order.subtotal);if(Number(order.discount)>0)money('Diskon'+(order.discount_percent!=null?` (${quantity(order.discount_percent)}%)`:''),-Number(order.discount));money('TOTAL',order.total,true);money(methodName[order.method],order.paid);money('Kembalian',order.change_amount);rule();
- if(order.notes){line('Catatan: '+order.notes);rule();}line('LUNAS',{bold:true,center:true});line('Terima kasih!',{center:true});line('Simpan nota untuk pengambilan cucian.',{size:7,center:true});
+ rule();money('Subtotal',order.subtotal);money('TOTAL',order.total,true);if(order.payment_status!=='unpaid'&&order.method!=='later'){money(methodName[order.method]||order.method,order.paid);money('Kembalian',order.change_amount);}rule();
+ if(order.notes){line('Catatan: '+order.notes);rule();}line(order.payment_status==='unpaid'||order.method==='later'?'BELUM BAYAR (BAYAR NANTI)':'LUNAS',{bold:true,center:true});line('Terima kasih!',{center:true});line('Simpan nota untuk pengambilan cucian.',{size:7,center:true});
  pdf.save(order.number+'.pdf');
 }

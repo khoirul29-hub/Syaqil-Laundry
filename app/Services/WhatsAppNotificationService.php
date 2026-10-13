@@ -27,8 +27,7 @@ class WhatsAppNotificationService
         $storeName = $settings['name'] ?? config('app.business_name', 'Syaqil Laundry');
         $storeAddress = $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang');
 
-        $baseUrl = request()?->getSchemeAndHttpHost() ?: rtrim(config('app.url', 'http://127.0.0.1:8000'), '/');
-        $receiptUrl = "{$baseUrl}/nota/{$order->public_token}";
+        $receiptUrl = $this->getPublicReceiptUrl($order->public_token);
 
         $phone = (string)($order->customer_phone ?? '');
         $createdAt = $order->created_at ? $order->created_at->format('d M Y H:i') : now()->format('d M Y H:i');
@@ -44,25 +43,19 @@ class WhatsAppNotificationService
         }
         $itemsText = !empty($itemLines) ? implode("\n", $itemLines) : "• Layanan laundry: Rp " . number_format($order->subtotal, 0, ',', '.');
 
-        $perfumeLine = '';
-        if (!empty($order->perfume) && $order->perfume !== '-' && strtolower($order->perfume) !== 'tanpa parfum') {
-            $perfumeLine = "🌸 *Parfum:* " . $order->perfume . "\n";
-        }
-
         $subtotalFormatted = 'Rp ' . number_format($order->subtotal, 0, ',', '.');
         $totalFormatted = 'Rp ' . number_format($order->total, 0, ',', '.');
         $methodLabel = match($order->method) {
             'qris' => 'QRIS',
             'transfer' => 'Transfer Bank',
+            'later' => 'Bayar Nanti',
             default => 'Tunai',
         };
 
-        $discountText = '';
-        if ((int)$order->discount > 0) {
-            $discountFormatted = 'Rp ' . number_format($order->discount, 0, ',', '.');
-            $discountPercent = $order->discount_percent ? " ({$order->discount_percent}%)" : '';
-            $discountText = "• Diskon{$discountPercent}: -{$discountFormatted}\n";
-        }
+        $isUnpaid = ($order->payment_status === 'unpaid') || ($order->method === 'later');
+        $paymentStatusText = $isUnpaid 
+            ? "• Status Pembayaran: *BELUM BAYAR (Bayar Nanti)*" 
+            : "• Status Pembayaran: *Lunas ({$methodLabel})*";
 
         $message = "*{$storeName}*\n"
             . "{$storeAddress}\n\n"
@@ -74,13 +67,10 @@ class WhatsAppNotificationService
             . "• Tanggal Masuk: {$createdAt}\n"
             . "• Estimasi Selesai: *{$due}*\n\n"
             . "🧺 *Rincian Layanan:*\n"
-            . "{$itemsText}\n"
-            . ($perfumeLine ? "{$perfumeLine}\n" : "\n")
+            . "{$itemsText}\n\n"
             . "💵 *Rincian Pembayaran:*\n"
-            . "• Subtotal: {$subtotalFormatted}\n"
-            . $discountText
-            . "• *Total:* *{$totalFormatted}*\n"
-            . "• Status Pembayaran: *Lunas ({$methodLabel})*\n\n"
+            . "• Total: *{$totalFormatted}*\n"
+            . "{$paymentStatusText}\n\n"
             . "📱 *Tautan Nota Digital:*\n"
             . "{$receiptUrl}\n\n"
             . "Terima kasih telah mempercayakan cucian Anda kepada kami!\n"
@@ -106,15 +96,18 @@ class WhatsAppNotificationService
         $storeName = $settings['name'] ?? config('app.business_name', 'Syaqil Laundry');
         $storeAddress = $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang');
 
-        $baseUrl = request()?->getSchemeAndHttpHost() ?: rtrim(config('app.url', 'http://127.0.0.1:8000'), '/');
-        $receiptUrl = "{$baseUrl}/nota/{$order->public_token}";
+        $receiptUrl = $this->getPublicReceiptUrl($order->public_token);
+
+        $isUnpaid = ($order->payment_status === 'unpaid') || ($order->method === 'later');
+        $paymentNotice = $isUnpaid ? "• Status Pembayaran: *BELUM BAYAR (Silakan bayar saat ambil)*\n" : "• Status Pembayaran: *Lunas*\n";
 
         $message = "*{$storeName}*\n"
             . "{$storeAddress}\n\n"
             . "Halo *{$order->customer_name}*,\n\n"
             . "Cucian Anda di *{$storeName}* dengan No. Nota *{$order->number}* sudah *SELESAI* dan siap diambil!\n"
             . "• Total: *{$totalFormatted}*\n"
-            . "• Status: *Siap Diambil*\n\n"
+            . "• Status: *Siap Diambil*\n"
+            . $paymentNotice . "\n"
             . "📱 *Tautan Nota Digital:*\n"
             . "{$receiptUrl}\n\n"
             . "Silakan tunjukkan nota ini saat pengambilan di outlet kami.\n"
@@ -289,5 +282,46 @@ class WhatsAppNotificationService
         }
 
         return $this->dispatchMessage($log->order, $log->phone, $log->type, $log->payload);
+    }
+
+    /**
+     * Membentuk URL nota digital publik yang aman dan dapat dibuka pelanggan melalui internet.
+     * Mengutamakan BASE_URL produksi dari environment (PUBLIC_RECEIPT_BASE_URL) tanpa hardcode,
+     * lalu fallback ke konfigurasi toko, APP_URL, atau request host saat development.
+     */
+    public function getPublicReceiptUrl(string $token): string
+    {
+        // 1. Prioritas utama: konfigurasi environment produksi PUBLIC_RECEIPT_BASE_URL
+        $envPublicBase = trim((string)config('app.public_receipt_base_url', env('PUBLIC_RECEIPT_BASE_URL', '')));
+        if (!empty($envPublicBase)) {
+            return rtrim($envPublicBase, '/') . "/nota/{$token}";
+        }
+
+        // 2. Prioritas kedua: pengaturan toko publik di database jika dikustomisasi oleh owner
+        $settings = BusinessSetting::allAsArray();
+        if (!empty($settings['public_receipt_base_url'])) {
+            return rtrim($settings['public_receipt_base_url'], '/') . "/nota/{$token}";
+        }
+
+        // 3. Prioritas ketiga: APP_URL jika disetel ke domain publik non-localhost (misal saat deployment)
+        $appUrl = trim((string)config('app.url', ''));
+        if (!empty($appUrl) && !str_contains($appUrl, '127.0.0.1') && !str_contains($appUrl, 'localhost')) {
+            return rtrim($appUrl, '/') . "/nota/{$token}";
+        }
+
+        // 4. Fallback saat development lokal (request host atau default app url)
+        $requestHost = null;
+        if (app()->bound('request')) {
+            try {
+                $requestHost = request()?->getSchemeAndHttpHost();
+            } catch (\Throwable) {
+                $requestHost = null;
+            }
+        }
+        if (!empty($requestHost)) {
+            return rtrim($requestHost, '/') . "/nota/{$token}";
+        }
+
+        return rtrim($appUrl ?: 'http://127.0.0.1:8000', '/') . "/nota/{$token}";
     }
 }

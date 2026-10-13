@@ -38,6 +38,7 @@ Route::middleware(['web'])->group(function () {
             Route::post('/orders/{id}/status', [OrderController::class, 'updateStatus']);
             // Modul 5: Struk dan Notifikasi WhatsApp
             Route::get('/orders/{id}/receipt', [OrderController::class, 'receipt']);
+            Route::post('/orders/{id}/settle', [OrderController::class, 'settlePayment']);
             Route::post('/orders/{id}/send-whatsapp', [OrderController::class, 'sendWhatsApp']);
 
             Route::get('/cashier/ping', function (Request $request) {

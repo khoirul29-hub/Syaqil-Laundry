@@ -94,6 +94,5 @@ export function validateExpense(values){
  if(!categories.includes(values.category))errors.category='Pilih kategori pengeluaran.';
  if(description.length<3)errors.description='Deskripsi minimal 3 karakter.';
  if(!Number.isSafeInteger(amount)||amount<=0||amount>1000000000)errors.amount='Jumlah harus berupa rupiah utuh antara 1 dan 1.000.000.000.';
- if(!paymentMethods.includes(values.method))errors.method='Pilih metode pembayaran.';
  return {errors,values:{...values,description,amount}};
 }

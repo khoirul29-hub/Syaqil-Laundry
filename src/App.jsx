@@ -3,6 +3,22 @@ import { api } from './lib';
 import CashierApp from './CashierApp';
 import OwnerApp from './owner/OwnerApp';
 import UnifiedLogin from './UnifiedLogin';
+import PublicReceipt from './PublicReceipt';
+
+function getPublicTokenFromUrl() {
+  if (typeof window === 'undefined') return null;
+  const pathname = window.location.pathname || '';
+  if (pathname.startsWith('/nota/')) {
+    const segment = pathname.replace(/^\/nota\//, '').split('/')[0].split('?')[0];
+    if (segment) return segment;
+  }
+  const hash = window.location.hash || '';
+  if (hash.startsWith('#/nota/') || hash.startsWith('#nota/')) {
+    const segment = hash.replace(/^#(|\/)nota\//, '').split('/')[0].split('?')[0];
+    if (segment) return segment;
+  }
+  return null;
+}
 
 const OWNER_PAGES = [
   'dashboard',
@@ -30,6 +46,19 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentHash, setCurrentHash] = useState(() => location.hash.slice(1));
+  const [publicToken, setPublicToken] = useState(() => getPublicTokenFromUrl());
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      setPublicToken(getPublicTokenFromUrl());
+    };
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
 
   const checkSession = useCallback(async () => {
     try {
@@ -95,6 +124,11 @@ export default function App() {
     setSession({ user: null });
     location.hash = 'login';
   };
+
+  // Akses Publik Nota Digital: Dapat dibuka siapa saja melalui internet tanpa login kasir
+  if (publicToken) {
+    return <PublicReceipt token={publicToken} />;
+  }
 
   if (loading) {
     return (

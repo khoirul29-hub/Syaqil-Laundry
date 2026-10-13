@@ -7,7 +7,7 @@ use InvalidArgumentException;
 class OrderCalculationService
 {
     public const VALID_CATEGORIES = ['Kiloan', 'Kemeja', 'Celana', 'Jas', 'Bedcover', 'Sepatu'];
-    public const VALID_METHODS = ['cash', 'qris', 'transfer'];
+    public const VALID_METHODS = ['cash', 'qris', 'transfer', 'later'];
     public const STATUS_TRANSITIONS = [
         'Diterima' => 'Diproses',
         'Diproses' => 'Selesai',
@@ -90,8 +90,10 @@ class OrderCalculationService
             ];
         }
 
-        if (!is_scalar($discountPercent) || !preg_match('/^\d+(\.\d{1,2})?$/D', (string)$discountPercent) || (float)$discountPercent > 100) {
-            throw new InvalidArgumentException('Diskon harus antara 0–100%, maksimal 2 angka desimal.');
+        if ($discountPercent === null || $discountPercent === '') {
+            $discountPercent = 0;
+        } elseif (!is_scalar($discountPercent) || !preg_match('/^\d+(\.\d{1,2})?$/D', (string)$discountPercent) || (float)$discountPercent < 0 || (float)$discountPercent > 100) {
+            throw new InvalidArgumentException('Diskon harus antara 0% hingga 100%, maksimal 2 desimal.');
         }
 
         $basisPoints = (int)round((float)$discountPercent * 100);
@@ -116,6 +118,14 @@ class OrderCalculationService
             throw new InvalidArgumentException('Metode pembayaran tidak valid.');
         }
 
+        if ($method === 'later') {
+            return [
+                'paid' => 0,
+                'change' => 0,
+                'payment_status' => 'unpaid',
+            ];
+        }
+
         if ($method !== 'cash' && (!$configured || !$confirmed)) {
             throw new InvalidArgumentException('Pembayaran non-tunai belum dikonfigurasi atau belum dikonfirmasi.');
         }
@@ -128,6 +138,7 @@ class OrderCalculationService
         return [
             'paid' => $paidAmount,
             'change' => $method === 'cash' ? ($paidAmount - $total) : 0,
+            'payment_status' => 'paid',
         ];
     }
 

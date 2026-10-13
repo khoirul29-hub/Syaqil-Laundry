@@ -44,4 +44,4 @@ export async function api(path,body,{timeout=15000}={}) {
  } finally {clearTimeout(timer);}
 }
 export const statuses=['Diterima','Diproses','Selesai','Diambil'];
-export const methodName={cash:'Tunai',qris:'QRIS',transfer:'Transfer'};
+export const methodName={cash:'Tunai',qris:'QRIS',transfer:'Transfer',later:'Bayar Nanti'};

@@ -145,11 +145,16 @@ class OrderController extends Controller
             return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
         }
 
+        $perfume = trim((string)$request->input('perfume', ''));
+        if (mb_strlen($perfume) > 100) {
+            $perfume = mb_substr($perfume, 0, 100);
+        }
+
         // Estimasi selesai berdasarkan durasi layanan
         $hours = array_filter(array_map(fn($i) => $i['duration_hours'] ?? null, $calc['items']));
         $dueAt = count($hours) > 0 ? now()->addHours(max($hours)) : null;
 
-        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $notes, $dueAt) {
+        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $notes, $perfume, $dueAt) {
             $order = Order::create([
                 'request_key' => $key,
                 'request_hash' => $fingerprint,
@@ -166,6 +171,8 @@ class OrderController extends Controller
                 'change_amount' => $payment['change'],
                 'status' => 'Diterima',
                 'notes' => $notes,
+                'perfume' => $perfume ?: null,
+                'public_token' => bin2hex(random_bytes(16)),
                 'due_at' => $dueAt,
                 'created_at' => now(),
             ]);
@@ -307,5 +314,57 @@ class OrderController extends Controller
             : $this->waService->sendReceiptNotification($order);
 
         return response()->json($result);
+    }
+
+    /**
+     * Tampilan publik nota digital mandiri yang dapat dibuka langsung oleh pelanggan via WhatsApp.
+     */
+    public function publicReceipt(string $token)
+    {
+        $order = Order::with(['items', 'history.user', 'cashier'])
+            ->where('public_token', $token)
+            ->first();
+
+        if (!$order) {
+            return response()->view('public_receipt_not_found', [], 404);
+        }
+
+        $settings = BusinessSetting::allAsArray();
+
+        return response()->view('public_receipt', [
+            'order' => $order,
+            'settings' => $settings,
+            'store' => [
+                'name' => $settings['name'] ?? config('app.business_name', 'Syaqil Laundry'),
+                'address' => $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang'),
+                'phone' => $settings['phone'] ?? config('app.business_phone', '081234567890'),
+            ],
+        ]);
+    }
+
+    /**
+     * Data JSON nota digital publik berdasarkan token unik.
+     */
+    public function publicReceiptJson(string $token): JsonResponse
+    {
+        $order = Order::with(['items', 'history.user', 'cashier'])
+            ->where('public_token', $token)
+            ->first();
+
+        if (!$order) {
+            return response()->json(['error' => 'Nota digital tidak ditemukan.'], 404);
+        }
+
+        $settings = BusinessSetting::allAsArray();
+
+        return response()->json([
+            'order' => $order->toFrontendArray(),
+            'store' => [
+                'name' => $settings['name'] ?? config('app.business_name', 'Syaqil Laundry'),
+                'address' => $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang'),
+                'phone' => $settings['phone'] ?? config('app.business_phone', '081234567890'),
+            ],
+            'print_at' => now()->format('d M Y H:i:s'),
+        ]);
     }
 }

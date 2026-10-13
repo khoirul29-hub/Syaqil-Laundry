@@ -2,9 +2,9 @@ import React,{useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {
  ArrowDownUp,CalendarDays,Check,CheckCircle2,Clock3,Download,Eye,
- FileText,MoreVertical,Package,Plus,Printer,Search,ShoppingBag
+ FileText,MessageCircle,MoreVertical,Package,Plus,Printer,Search,ShoppingBag
 } from 'lucide-react';
-import {dateText,localPhone,methodName,quantity,rupiah,statuses} from './lib';
+import {api,dateText,localPhone,methodName,quantity,rupiah,statuses} from './lib';
 import {inPeriod,weeklyActivity} from './insights';
 import {Empty,ErrorBox,Status} from './components';
 import {Pagination,ServiceName} from './ReferenceUI';
@@ -98,6 +98,13 @@ export default function CashierOrders({data,onSelect,print,go}) {
   try{await downloadReceipt(order,data.settings);}catch{setPdfError('PDF belum dapat dibuat. Coba cetak nota melalui browser.');}
   finally{setPdfBusy(false);}
  }
+ async function sendWa(order){
+  setMenu(null);
+  try{
+   const r=await api('/orders/'+order.id+'/send-whatsapp',{type:order.status==='Selesai'?'status_ready':'receipt'});
+   if(r.wa_url)window.open(r.wa_url,'_blank','noopener,noreferrer');
+  }catch(e){console.error(e);}
+ }
  function excel(){
   exportExcel('Pesanan-Syaqil',['No. Nota','Tanggal','Pelanggan','Layanan','Berat (kg)','Total','Diskon (%)','Potongan','Metode','Status'],orders.map(order=>[
    order.number,order.created_at,order.customer_name,order.items.map(item=>item.service_name).join(', '),orderWeight(order),Number(order.total),
@@ -152,6 +159,7 @@ export default function CashierOrders({data,onSelect,print,go}) {
   </div>
   {selectedMenuOrder&&createPortal(<div ref={menuRef} className="orders-action-menu" style={{left:menu.left,top:menu.top}} aria-label={'Opsi '+selectedMenuOrder.number}>
    <button onClick={()=>{setMenu(null);onSelect(selectedMenuOrder);}}><Eye size={16}/>Lihat detail</button>
+   <button onClick={()=>sendWa(selectedMenuOrder)}><MessageCircle size={16}/>Kirim WhatsApp</button>
    <button onClick={()=>{setMenu(null);print(selectedMenuOrder);}}><Printer size={16}/>Cetak nota</button>
    <button onClick={()=>savePdf(selectedMenuOrder)}><Download size={16}/>Download PDF</button>
   </div>,document.body)}

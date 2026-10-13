@@ -32,9 +32,20 @@ class Order extends Model
         'change_amount',
         'status',
         'notes',
+        'perfume',
+        'public_token',
         'due_at',
         'created_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Order $order) {
+            if (empty($order->public_token)) {
+                $order->public_token = bin2hex(random_bytes(16));
+            }
+        });
+    }
 
     protected $casts = [
         'customer_id' => 'integer',
@@ -86,6 +97,8 @@ class Order extends Model
     {
         $arr = $this->toArray();
         $arr['cashier_name'] = $this->cashier ? $this->cashier->name : null;
+        $arr['perfume'] = $this->perfume;
+        $arr['public_token'] = $this->public_token;
         $arr['items'] = $this->items->map(function ($item) {
             return [
                 'service_id' => (int)$item->service_id,

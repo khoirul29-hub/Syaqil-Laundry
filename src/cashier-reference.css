@@ -149,3 +149,21 @@
 
 .ref-cashier-page .customer-row>div:last-child{display:block}
 .ref-cashier-page .cart-table th:first-child,.ref-cashier-page .cart-table td:first-child{display:table-cell}
+
+.ref-weight-notes-row{display:grid;grid-template-columns:1fr 1.1fr 1.5fr auto;align-items:end;gap:12px;margin-top:18px}
+.ref-cashier-perfume{min-width:0}
+.ref-cashier-perfume select{height:57px;font-size:11px;padding:0 8px;border:1px solid #dfe6f2;border-radius:6px;background:#fbfcff;color:#111;width:100%}
+
+.success-whatsapp-card{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px 16px;margin:0 auto 16px;text-align:left;width:100%}
+.whatsapp-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.whatsapp-badge{display:inline-flex;align-items:center;gap:6px;color:#15803d;font-weight:700;font-size:13px}
+.whatsapp-phone{font-size:12px;font-weight:600;color:#166534;background:#dcfce7;padding:2px 8px;border-radius:6px}
+.whatsapp-card-desc{font-size:12px;color:#14532d;line-height:1.5;margin-bottom:12px}
+.whatsapp-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.whatsapp-btn{display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#ffffff;border:none;border-radius:8px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;transition:background .15s ease}
+.whatsapp-btn:hover{background:#1eb855}
+.whatsapp-btn.whatsapp-secondary{background:#0755ee;color:#ffffff}
+.whatsapp-btn.whatsapp-secondary:hover{background:#0543c2}
+.whatsapp-token-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#0755ee;font-weight:600;text-decoration:none}
+.whatsapp-token-link:hover{text-decoration:underline}
+

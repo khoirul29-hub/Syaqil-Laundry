@@ -16,19 +16,75 @@ class WhatsAppNotificationService
      */
     public function sendReceiptNotification(Order $order): array
     {
-        $phone = $order->customer_phone;
-        $totalFormatted = 'Rp ' . number_format($order->total, 0, ',', '.');
+        $order->loadMissing('items');
+
+        if (empty($order->public_token)) {
+            $order->public_token = bin2hex(random_bytes(16));
+            $order->saveQuietly();
+        }
+
+        $settings = BusinessSetting::allAsArray();
+        $storeName = $settings['name'] ?? config('app.business_name', 'Syaqil Laundry');
+        $storeAddress = $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang');
+
+        $baseUrl = request()?->getSchemeAndHttpHost() ?: rtrim(config('app.url', 'http://127.0.0.1:8000'), '/');
+        $receiptUrl = "{$baseUrl}/nota/{$order->public_token}";
+
+        $phone = (string)($order->customer_phone ?? '');
+        $createdAt = $order->created_at ? $order->created_at->format('d M Y H:i') : now()->format('d M Y H:i');
         $due = $order->due_at ? $order->due_at->format('d M Y H:i') : 'Sesuai antrean';
 
-        $message = "Halo *{$order->customer_name}*,\n\n"
-            . "Terima kasih telah mencuci di *Syaqil Laundry*!\n"
-            . "Pesanan Anda telah kami terima:\n"
+        $itemLines = [];
+        foreach ($order->items as $item) {
+            $qty = rtrim(rtrim(number_format((float)$item->quantity, 2, ',', '.'), '0'), ',');
+            $priceFormatted = 'Rp ' . number_format($item->price, 0, ',', '.');
+            $subtotalFormatted = 'Rp ' . number_format($item->subtotal, 0, ',', '.');
+            $categoryText = $item->category ? " ({$item->category})" : '';
+            $itemLines[] = "• {$item->service_name}{$categoryText}: {$qty} {$item->unit} × {$priceFormatted} = {$subtotalFormatted}";
+        }
+        $itemsText = !empty($itemLines) ? implode("\n", $itemLines) : "• Layanan laundry: Rp " . number_format($order->subtotal, 0, ',', '.');
+
+        $perfumeLine = '';
+        if (!empty($order->perfume) && $order->perfume !== '-' && strtolower($order->perfume) !== 'tanpa parfum') {
+            $perfumeLine = "🌸 *Parfum:* " . $order->perfume . "\n";
+        }
+
+        $subtotalFormatted = 'Rp ' . number_format($order->subtotal, 0, ',', '.');
+        $totalFormatted = 'Rp ' . number_format($order->total, 0, ',', '.');
+        $methodLabel = match($order->method) {
+            'qris' => 'QRIS',
+            'transfer' => 'Transfer Bank',
+            default => 'Tunai',
+        };
+
+        $discountText = '';
+        if ((int)$order->discount > 0) {
+            $discountFormatted = 'Rp ' . number_format($order->discount, 0, ',', '.');
+            $discountPercent = $order->discount_percent ? " ({$order->discount_percent}%)" : '';
+            $discountText = "• Diskon{$discountPercent}: -{$discountFormatted}\n";
+        }
+
+        $message = "*{$storeName}*\n"
+            . "{$storeAddress}\n\n"
+            . "Halo *{$order->customer_name}*,\n"
+            . "Terima kasih telah mempercayakan cucian Anda di *{$storeName}*.\n\n"
+            . "Berikut rincian nota transaksi Anda:\n"
             . "• No. Nota: *{$order->number}*\n"
-            . "• Total: *{$totalFormatted}*\n"
-            . "• Pembayaran: *" . ucfirst($order->method) . " (Lunas)*\n"
+            . "• Pelanggan: *{$order->customer_name}*\n"
+            . "• Tanggal Masuk: {$createdAt}\n"
             . "• Estimasi Selesai: *{$due}*\n\n"
-            . "Kami akan mengabari Anda kembali saat cucian siap diambil.\n"
-            . "_Syaqil Laundry - Bersih. Cepat. Beres._";
+            . "🧺 *Rincian Layanan:*\n"
+            . "{$itemsText}\n"
+            . ($perfumeLine ? "{$perfumeLine}\n" : "\n")
+            . "💵 *Rincian Pembayaran:*\n"
+            . "• Subtotal: {$subtotalFormatted}\n"
+            . $discountText
+            . "• *Total:* *{$totalFormatted}*\n"
+            . "• Status Pembayaran: *Lunas ({$methodLabel})*\n\n"
+            . "📱 *Tautan Nota Digital:*\n"
+            . "{$receiptUrl}\n\n"
+            . "Terima kasih telah mempercayakan cucian Anda kepada kami!\n"
+            . "_{$storeName} - Bersih. Cepat. Beres._";
 
         return $this->dispatchMessage($order, $phone, 'receipt', $message);
     }
@@ -38,16 +94,32 @@ class WhatsAppNotificationService
      */
     public function sendStatusReadyNotification(Order $order): array
     {
-        $phone = $order->customer_phone;
+        $phone = (string)($order->customer_phone ?? '');
         $totalFormatted = 'Rp ' . number_format($order->total, 0, ',', '.');
 
-        $message = "Halo *{$order->customer_name}*,\n\n"
-            . "Cucian Anda di *Syaqil Laundry* dengan No. Nota *{$order->number}* sudah *SELESAI* dan siap diambil!\n"
+        if (empty($order->public_token)) {
+            $order->public_token = bin2hex(random_bytes(16));
+            $order->saveQuietly();
+        }
+
+        $settings = BusinessSetting::allAsArray();
+        $storeName = $settings['name'] ?? config('app.business_name', 'Syaqil Laundry');
+        $storeAddress = $settings['address'] ?? config('app.business_address', 'Jl. Merdeka No. 45, Padang');
+
+        $baseUrl = request()?->getSchemeAndHttpHost() ?: rtrim(config('app.url', 'http://127.0.0.1:8000'), '/');
+        $receiptUrl = "{$baseUrl}/nota/{$order->public_token}";
+
+        $message = "*{$storeName}*\n"
+            . "{$storeAddress}\n\n"
+            . "Halo *{$order->customer_name}*,\n\n"
+            . "Cucian Anda di *{$storeName}* dengan No. Nota *{$order->number}* sudah *SELESAI* dan siap diambil!\n"
             . "• Total: *{$totalFormatted}*\n"
             . "• Status: *Siap Diambil*\n\n"
+            . "📱 *Tautan Nota Digital:*\n"
+            . "{$receiptUrl}\n\n"
             . "Silakan tunjukkan nota ini saat pengambilan di outlet kami.\n"
             . "Terima kasih!\n"
-            . "_Syaqil Laundry - Bersih. Cepat. Beres._";
+            . "_{$storeName} - Bersih. Cepat. Beres._";
 
         return $this->dispatchMessage($order, $phone, 'status_ready', $message);
     }
@@ -64,9 +136,12 @@ class WhatsAppNotificationService
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
         if (str_starts_with($cleanPhone, '0')) {
             $cleanPhone = '62' . substr($cleanPhone, 1);
+        } elseif (str_starts_with($cleanPhone, '8')) {
+            $cleanPhone = '62' . $cleanPhone;
         }
 
-        $waMeUrl = "https://wa.me/{$cleanPhone}?text=" . rawurlencode($message);
+        $isValidPhone = !empty($cleanPhone) && (bool)preg_match('/^628[1-9][0-9]{7,11}$/D', $cleanPhone);
+        $waMeUrl = !empty($cleanPhone) ? "https://wa.me/{$cleanPhone}?text=" . rawurlencode($message) : null;
 
         $settings = BusinessSetting::allAsArray();
         $gatewayEnabled = !empty($settings['whatsapp_enabled']) && $settings['whatsapp_enabled'] === '1';
@@ -97,6 +172,8 @@ class WhatsAppNotificationService
                 'status' => 'not_configured',
                 'message' => 'WhatsApp belum terhubung.',
                 'wa_url' => $waMeUrl,
+                'phone_valid' => $isValidPhone,
+                'clean_phone' => $cleanPhone,
                 'log_id' => $log->id,
             ];
         }
@@ -135,6 +212,8 @@ class WhatsAppNotificationService
                     'status' => 'sent',
                     'message' => 'Notifikasi WhatsApp berhasil dikirim.',
                     'wa_url' => $waMeUrl,
+                    'phone_valid' => $isValidPhone,
+                    'clean_phone' => $cleanPhone,
                     'log_id' => $log->id,
                 ];
             }
@@ -163,6 +242,8 @@ class WhatsAppNotificationService
                 'status' => 'failed',
                 'message' => $errText,
                 'wa_url' => $waMeUrl,
+                'phone_valid' => $isValidPhone,
+                'clean_phone' => $cleanPhone,
                 'log_id' => $log->id,
             ];
         } catch (Throwable $e) {
@@ -190,6 +271,8 @@ class WhatsAppNotificationService
                 'status' => 'failed',
                 'message' => $errText,
                 'wa_url' => $waMeUrl,
+                'phone_valid' => $isValidPhone,
+                'clean_phone' => $cleanPhone,
                 'log_id' => $log->id,
             ];
         }

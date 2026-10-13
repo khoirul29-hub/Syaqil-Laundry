@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\OrderController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 | hasil build Vite sehingga refresh browser tidak pernah menghasilkan 404.
 |
 */
+
+// Tautan Nota Digital Publik (Click-to-Chat WhatsApp Customer)
+Route::get('/nota/{token}', [OrderController::class, 'publicReceipt'])->name('public.receipt');
 
 Route::get('/login', function () {
     return redirect('/#login');

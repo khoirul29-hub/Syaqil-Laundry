@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['web'])->group(function () {
     Route::get('/session', [AuthController::class, 'session']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/public/receipt/{token}', [OrderController::class, 'publicReceiptJson']);
 
     // Authenticated Common Routes
     Route::middleware(['auth:sanctum'])->group(function () {

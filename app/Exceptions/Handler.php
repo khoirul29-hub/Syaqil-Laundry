@@ -38,6 +38,14 @@ class Handler extends ExceptionHandler
      */
     protected function unauthenticated($request, AuthenticationException $exception)
     {
+        if ($request->is('api/session')) {
+            return response()->json([
+                'user' => null,
+                'csrf' => csrf_token(),
+                'settings' => \App\Models\BusinessSetting::allAsArray(),
+            ], 200);
+        }
+
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
                 'message' => 'Unauthenticated.',

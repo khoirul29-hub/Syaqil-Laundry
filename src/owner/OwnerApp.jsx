@@ -42,12 +42,12 @@ function Topbar({page,mobile,toggle,navigate,onLogout,currentUser,customers,rece
  const matches=query?[
   ...ITEMS.filter(item=>item[1].toLowerCase().includes(query)).map(([key,label,Icon])=>({key,label,Icon})),
   ...[['profile','Profil Usaha dan Jam Operasional'],['access','Akun & Akses'],['receipt','Nota & Struk'],['system','Sistem dan Format Tampilan'],['notifications','Notifikasi'],['backup','Backup & Data']].filter(([,label])=>label.toLowerCase().includes(query)).map(([tab,label])=>({key:'pengaturan',label,query:tab,Icon:Settings2})),
-  ...customers.filter(row=>row.name.toLowerCase().includes(query)||row.phone.includes(query)||row.address.toLowerCase().includes(query)).slice(0,3).map(row=>({key:'pelanggan',label:row.name,query:row.name,Icon:UsersRound})),
-  ...receipts.filter(row=>row.number.toLowerCase().includes(query)||row.customer.toLowerCase().includes(query)).slice(0,2).map(row=>({key:'riwayat-nota',label:row.number,query:row.number,Icon:Receipt})),
-  ...employees.filter(row=>[row.name,row.username,row.role].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'karyawan',label:row.name+' · '+row.role,query:row.username,Icon:UsersRound})),
-  ...services.filter(row=>[row.name,row.price].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'layanan-harga',label:row.name,query:row.name,Icon:Shirt})),
-  ...corrections.filter(row=>[row.number,row.customer,row.reason].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'koreksi-transaksi',label:row.number+' · Koreksi',query:row.number,Icon:FilePenLine})),
-  ...expenses.filter(row=>[row.description,row.category].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'pengeluaran',label:row.description,query:row.description,Icon:WalletCards}))
+  ...customers.filter(row=>(row.name||'').toLowerCase().includes(query)||(row.phone||'').includes(query)||(row.address||'').toLowerCase().includes(query)).slice(0,3).map(row=>({key:'pelanggan',label:row.name,query:row.name,Icon:UsersRound})),
+  ...receipts.filter(row=>(row.number||'').toLowerCase().includes(query)||(row.customer||'').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'riwayat-nota',label:row.number,query:row.number,Icon:Receipt})),
+  ...employees.filter(row=>[row.name||'',row.username||'',row.role||''].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'karyawan',label:row.name+' · '+row.role,query:row.username,Icon:UsersRound})),
+  ...services.filter(row=>[row.name||'',row.price||''].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'layanan-harga',label:row.name,query:row.name,Icon:Shirt})),
+  ...corrections.filter(row=>[row.number||'',row.customer||'',row.reason||''].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'koreksi-transaksi',label:row.number+' · Koreksi',query:row.number,Icon:FilePenLine})),
+  ...expenses.filter(row=>[row.description||'',row.category||''].join(' ').toLowerCase().includes(query)).slice(0,2).map(row=>({key:'pengeluaran',label:row.description,query:row.description,Icon:WalletCards}))
  ].slice(0,7):[];
  useEffect(()=>{
   const key=event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();searchRef.current?.focus();}if(event.key==='Escape'){setSearch('');setPopover('');}};

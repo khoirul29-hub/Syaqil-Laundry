@@ -78,12 +78,18 @@ class OwnerController extends Controller
             ->map(fn($c) => [
                 'id' => (int)$c->id,
                 'name' => $c->name,
-                'phone' => $c->phone,
+                'phone' => $c->phone ?: '',
                 'address' => $c->address ?: '',
                 'notes' => $c->notes ?: '',
                 'order_count' => (int)$c->order_count,
                 'total_spent' => (int)$c->total_spent,
-                'last_order' => $c->last_order,
+                'last_order' => $c->last_order ?: '',
+                'transactions' => (int)$c->order_count,
+                'spent' => (int)$c->total_spent,
+                'last' => $c->last_order ? (is_string($c->last_order) ? substr($c->last_order, 0, 10) : $c->last_order->format('Y-m-d')) : '',
+                'category' => ((int)$c->order_count >= 10 || (int)$c->total_spent >= 300000) ? 'Member' : 'Reguler',
+                'joined' => $c->created_at ? $c->created_at->format('Y-m-d') : date('Y-m-d'),
+                'email' => $c->email ?: '',
             ])
             ->values()->all();
 
@@ -133,7 +139,8 @@ class OwnerController extends Controller
             'active' => (bool)$u->active,
             'phone' => $u->phone ?: '',
             'shift' => $u->shift ?: 'Pagi',
-            'lastLogin' => $u->last_login_at ? $u->last_login_at->format('Y-m-d\TH:i') : null,
+            'lastLogin' => $u->last_login_at ? $u->last_login_at->format('Y-m-d\TH:i') : '',
+            'resets' => 0,
         ])->values()->all();
 
         // 7. Koreksi Transaksi

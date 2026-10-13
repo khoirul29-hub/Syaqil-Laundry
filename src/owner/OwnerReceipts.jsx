@@ -14,10 +14,10 @@ export default function OwnerReceipts({receipts,setReceipts,activities,setActivi
  useEffect(()=>{setDraft(values=>({...values,search:initialQuery}));setFilters(values=>({...values,search:initialQuery}));setPage(1);},[initialQuery]);
  const filtered=receipts.filter(row=>{
   const text=`${row.number} ${row.customer}`.toLowerCase();
-  return text.includes(filters.search.trim().toLowerCase())&&text.includes(search.trim().toLowerCase())&&(filters.method==='Semua'||row.method===filters.method)&&(filters.status==='Semua'||row.status===filters.status)&&(filters.period==='all'||filters.period==='today'&&row.date===DEMO_DAY||filters.period==='month'&&row.date.startsWith('2026-10')||filters.period==='custom'&&(!filters.from||row.date>=filters.from)&&(!filters.to||row.date<=filters.to));
- }).sort((a,b)=>(sort==='oldest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date))||a.id-b.id);
+  return text.includes(filters.search.trim().toLowerCase())&&text.includes(search.trim().toLowerCase())&&(filters.method==='Semua'||row.method===filters.method)&&(filters.status==='Semua'||row.status===filters.status)&&(filters.period==='all'||filters.period==='today'&&row.date===DEMO_DAY||filters.period==='month'&&(row.date||'').startsWith('2026-10')||filters.period==='custom'&&(!filters.from||row.date>=filters.from)&&(!filters.to||row.date<=filters.to));
+ }).sort((a,b)=>((sort==='oldest'?(a.date||'').localeCompare(b.date||''):(b.date||'').localeCompare(a.date||'')))||a.id-b.id);
  const current=Math.min(page,Math.max(1,Math.ceil(filtered.length/8))),visible=filtered.slice((current-1)*8,current*8),selected=filtered.find(row=>row.id===selectedId)||visible[0];
- const todayCount=receipts.filter(row=>row.date===DEMO_DAY).length,monthReceipts=receipts.filter(row=>row.date.startsWith('2026-10'));
+ const todayCount=receipts.filter(row=>row.date===DEMO_DAY).length,monthReceipts=receipts.filter(row=>(row.date||'').startsWith('2026-10'));
  function apply(event){event.preventDefault();if(draft.period==='custom'&&draft.from&&draft.to&&draft.from>draft.to){setError('Tanggal akhir harus sama dengan atau setelah tanggal awal.');return;}setError('');setFilters({...draft});setPage(1);}
  function record(type,receipt){setActivities(rows=>[{id:Date.now(),type,number:receipt.number,date:new Date().toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})},...rows]);}
  function view(receipt,detail=false){setSelectedId(receipt.id);if(detail)setDetailOpen(true);record('view',receipt);}

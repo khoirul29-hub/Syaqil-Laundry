@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "serve": "php artisan serve --host=127.0.0.1 --port=8000",
     "owner:dev": "vite --config owner/vite.config.js",
     "owner:build": "vite build --config owner/vite.config.js",
-    "test": "php tests/domain.php"
+    "test": "php tests/domain.php",
+    "test:backend": "php test_auth_rbac.php"
   },
   "dependencies": {
     "@fontsource/anton": "^5.2.0",

@@ -38,7 +38,6 @@ function CustomerEditor({customer, onClose, onSaved, focusNotes = false}) {
   <form className="customer-form" onSubmit={save}>
    <label htmlFor="edit-customer-name">Nama pelanggan *</label><input id="edit-customer-name" autoFocus={!focusNotes} required minLength="2" maxLength="100" value={form.name} onChange={event => setForm({...form, name: event.target.value})}/>
    <label htmlFor="edit-customer-phone">No. WhatsApp *</label><input id="edit-customer-phone" type="tel" required value={form.phone} onChange={event => setForm({...form, phone: event.target.value})}/>
-   <label htmlFor="edit-customer-address">Alamat</label><textarea id="edit-customer-address" maxLength="300" value={form.address} onChange={event => setForm({...form, address: event.target.value})}/>
    <label htmlFor="edit-customer-notes">Catatan pelanggan</label><textarea id="edit-customer-notes" autoFocus={focusNotes} maxLength="1000" placeholder="Contoh: pisahkan pakaian putih." value={form.notes} onChange={event => setForm({...form, notes: event.target.value})}/>
    <ErrorBox message={error}/><div className="modal-actions"><button type="button" className="secondary" disabled={busy} onClick={onClose}>Batal</button><button className="primary" disabled={busy}>{busy ? 'Menyimpan...' : 'Simpan perubahan'}</button></div>
   </form>

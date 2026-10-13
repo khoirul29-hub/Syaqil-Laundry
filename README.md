@@ -1,17 +1,16 @@
-# Syaqil Laundry — Kasir dan Owner (Unified Architecture)
+# Syaqil Laundry — Kasir dan Owner (Unified Monolith Architecture)
 
-Repo ini berisi aplikasi sistem kasir dan manajemen owner terpadu untuk **Syaqil Laundry Ekspres**. Seluruh modul Kasir dan Owner kini ditenagai oleh backend **Laravel 10** terpusat (`backend/`) dengan satu basis data MySQL (`syaqil_laundry`), autentikasi Sanctum RBAC, perhitungan transaksi otoritatif, pencatatan keuangan real-time, cetak struk nota, dan notifikasi WhatsApp yang resilien.
+Repo ini berisi aplikasi sistem kasir dan manajemen owner terpadu untuk **Syaqil Laundry Ekspres**. Frontend React SPA dan backend **Laravel 10** kini tergabung dalam satu proyek utuh (monolith terpadu) dengan satu basis data MySQL (`syaqil_laundry`), autentikasi Sanctum RBAC, perhitungan transaksi otoritatif, pencatatan keuangan real-time, cetak struk nota, dan notifikasi WhatsApp yang resilien.
 
 ---
 
 ## 🔑 Kredensial Akun Resmi
 
+- **URL Aplikasi Terpadu (Port 8000):** **http://127.0.0.1:8000/**
 - **Owner:**
-  - URL: **http://127.0.0.1:5174/#login**
   - Username: `owner`
   - Kata Sandi: `OwnerSyaqil!2026`
 - **Kasir:**
-  - URL: **http://127.0.0.1:5173/#login**
   - Username: `kasir`
   - Kata Sandi: `KasirSyaqil!2026`
 
@@ -20,25 +19,21 @@ Repo ini berisi aplikasi sistem kasir dan manajemen owner terpadu untuk **Syaqil
 ## 🚀 Menjalankan Aplikasi Secara Lokal
 
 1. **Jalankan Database MySQL (Laragon atau daemon):** Pastikan port `3306` aktif dan database `syaqil_laundry` tersedia.
-2. **Jalankan Backend Laravel (Port 8000):**
+2. **Jalankan Aplikasi Web Terpadu (Port 8000):**
    ```sh
-   cd backend
    php artisan serve --host=127.0.0.1 --port=8000
    ```
-3. **Jalankan Frontend Kasir (Port 5173):**
+   *Atau cukup klik dua kali file:* `start-all.bat`
+3. **Membangun Aset Frontend (Bila Ada Perubahan Kode):**
    ```sh
-   npm run dev
-   ```
-4. **Jalankan Frontend Owner (Port 5174):**
-   ```sh
-   npm run owner:dev
+   npm run build
    ```
 
 ---
 
 ## 🧪 Pengujian Otomatis Seluruh Modul (100% Pass / 91 Pengujian)
 
-Untuk memverifikasi keandalan sistem dari folder `backend/`:
+Untuk memverifikasi keandalan sistem langsung dari root proyek:
 - `php test_auth_rbac.php` (Modul 2 — 12 Pengujian)
 - `php test_cashier_orders.php` (Modul 3 — 18 Pengujian)
 - `php test_owner_management.php` (Modul 4 — 19 Pengujian)

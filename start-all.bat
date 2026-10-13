@@ -10,9 +10,10 @@ echo.
 
 set "ROOT_DIR=%~dp0"
 set "PHP_BIN=C:\laragon\bin\php\php-8.1.34-Win32-vs16-x64\php.exe"
+if not exist "%PHP_BIN%" set "PHP_BIN=php"
 
 echo [1/1] Menjalankan Server Web Terpadu Laravel (Port 8000)...
-start "Syaqil Laundry - Server Terpadu" cmd /k "cd /d %ROOT_DIR%backend && ^"%PHP_BIN%^" artisan serve --host=127.0.0.1 --port=8000"
+start "Syaqil Laundry - Server Terpadu" cmd /k "cd /d %ROOT_DIR% && ^"%PHP_BIN%^" artisan serve --host=127.0.0.1 --port=8000"
 
 echo.
 echo Menunggu 2 detik untuk inisialisasi server...

@@ -55,8 +55,6 @@ class OwnerController extends Controller
                 'total' => (int)$order->total,
                 'weight' => $totalWeight > 0 ? $totalWeight : 1.0,
                 'subtotal' => (int)$order->subtotal,
-                'discount' => (int)$order->discount,
-                'discount_percent' => (float)$order->discount_percent,
                 'paid' => (int)$order->paid,
                 'change_amount' => (int)$order->change_amount,
                 'status' => $order->status,
@@ -105,7 +103,6 @@ class OwnerController extends Controller
             'category' => $e->category,
             'description' => $e->description,
             'amount' => (int)$e->amount,
-            'method' => $e->method,
             'actor' => $e->actor,
         ])->values()->all();
 
@@ -208,7 +205,6 @@ class OwnerController extends Controller
         $category = (string)$request->input('category', 'Operasional');
         $amount = (int)$request->input('amount', 0);
         $date = (string)$request->input('date', date('Y-m-d'));
-        $method = (string)$request->input('method', 'Tunai');
 
         if (mb_strlen($description) < 2 || mb_strlen($description) > 255) {
             return response()->json(['error' => 'Keterangan pengeluaran minimal 2 karakter (maksimal 255).'], 422);
@@ -227,7 +223,6 @@ class OwnerController extends Controller
             'category' => $category,
             'description' => $description,
             'amount' => $amount,
-            'method' => $method,
             'actor' => $user->name,
         ]);
 
@@ -237,7 +232,6 @@ class OwnerController extends Controller
             'category' => $expense->category,
             'description' => $expense->description,
             'amount' => (int)$expense->amount,
-            'method' => $expense->method,
             'actor' => $expense->actor,
         ]], 201);
     }
@@ -256,7 +250,6 @@ class OwnerController extends Controller
         $category = (string)$request->input('category', $expense->category);
         $amount = (int)$request->input('amount', $expense->amount);
         $date = (string)$request->input('date', $expense->date->format('Y-m-d'));
-        $method = (string)$request->input('method', $expense->method);
 
         if (mb_strlen($description) < 2) {
             return response()->json(['error' => 'Keterangan pengeluaran minimal 2 karakter.'], 422);
@@ -270,7 +263,6 @@ class OwnerController extends Controller
             'category' => $category,
             'description' => $description,
             'amount' => $amount,
-            'method' => $method,
         ]);
 
         return response()->json(['expense' => [
@@ -279,7 +271,6 @@ class OwnerController extends Controller
             'category' => $expense->category,
             'description' => $expense->description,
             'amount' => (int)$expense->amount,
-            'method' => $expense->method,
             'actor' => $expense->actor,
         ]]);
     }

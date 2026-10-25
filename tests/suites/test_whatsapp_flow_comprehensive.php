@@ -94,23 +94,19 @@ $serviceId = (int)$activeService->id;
 $servicePrice = (int)$activeService->price;
 $qty = 4.0;
 $subtotal = (int)round($qty * $servicePrice);
-$discountPercent = 10;
-$discount = (int)round($subtotal * 0.10);
-$expectedTotal = $subtotal - $discount;
+$expectedTotal = $subtotal;
 
-// 4. Kasir memproses transaksi dengan parfum 'Ocean Fresh'
+// 4. Kasir memproses transaksi
 $reqKey = 'test-wa-flow-' . bin2hex(random_bytes(10));
 $orderPayload = [
     'customer_id' => $customerId,
     'items' => [
         ['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']
     ],
-    'discount_percent' => $discountPercent,
     'method' => 'cash',
     'paid' => $expectedTotal + 20000,
     'expected_total' => $expectedTotal,
     'request_key' => $reqKey,
-    'perfume' => 'Ocean Fresh',
     'notes' => 'Tolong pisahkan pakaian putih dan batik sutra.',
 ];
 
@@ -207,7 +203,6 @@ $invalidOrderPayload = [
     'items' => [
         ['service_id' => $serviceId, 'quantity' => 1.0, 'category' => 'Kiloan']
     ],
-    'discount_percent' => 0,
     'method' => 'cash',
     'paid' => $servicePrice,
     'expected_total' => $servicePrice,

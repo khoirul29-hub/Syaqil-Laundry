@@ -156,19 +156,16 @@ $badQtyRes = callApp('/api/orders', 'POST', [
 ], $cashierCookies);
 assertTest('8. Transaksi dengan berat 0 atau negatif ditolak oleh backend (HTTP 422)', $badQtyRes['status'] === 422, "Status: {$badQtyRes['status']}");
 
-// TEST 9: Validasi Backend: Diskon > 100% ditolak
+// TEST 9: Validasi Backend: Transaksi tanpa item ditolak
 $badDiscRes = callApp('/api/orders', 'POST', [
     'customer_id' => $newCustId,
-    'items' => [
-        ['service_id' => $serviceId, 'quantity' => 2, 'category' => 'Kiloan']
-    ],
-    'discount_percent' => 150,
+    'items' => [],
     'method' => 'cash',
     'paid' => 10000,
     'expected_total' => 0,
-    'request_key' => 'test-req-baddisc-' . bin2hex(random_bytes(10)),
+    'request_key' => 'test-req-noitem-' . bin2hex(random_bytes(10)),
 ], $cashierCookies);
-assertTest('9. Transaksi dengan diskon di atas 100% ditolak oleh backend (HTTP 422)', $badDiscRes['status'] === 422, "Status: {$badDiscRes['status']}");
+assertTest('9. Transaksi tanpa item ditolak oleh backend (HTTP 422)', $badDiscRes['status'] === 422, "Status: {$badDiscRes['status']}");
 
 // TEST 10: Deteksi Tampering Harga: expected_total berbeda dari kalkulasi otoritatif backend
 $badPriceRes = callApp('/api/orders', 'POST', [
@@ -176,7 +173,6 @@ $badPriceRes = callApp('/api/orders', 'POST', [
     'items' => [
         ['service_id' => $serviceId, 'quantity' => 3, 'category' => 'Kiloan']
     ],
-    'discount_percent' => 0,
     'method' => 'cash',
     'paid' => 50000,
     'expected_total' => 1000, // Sengaja dimanipulasi
@@ -184,14 +180,11 @@ $badPriceRes = callApp('/api/orders', 'POST', [
 ], $cashierCookies);
 assertTest('10. Manipulasi / perbedaan nominal expected_total dicegah (HTTP 409)', $badPriceRes['status'] === 409, "Status: {$badPriceRes['status']}");
 
-// Hitung nilai eksak untuk 3.5 kg dengan diskon 10%
+// Hitung nilai eksak untuk 3.5 kg tanpa diskon
 $qty = 3.5;
 $hundredths = (int)round($qty * 100);
 $expectedSubtotal = (int)round($hundredths * $servicePrice / 100);
-$discPercent = 10.0;
-$basisPoints = (int)round($discPercent * 100);
-$expectedDiscount = (int)round($expectedSubtotal * $basisPoints / 10000);
-$expectedTotal = $expectedSubtotal - $expectedDiscount;
+$expectedTotal = $expectedSubtotal;
 $cashPaid = $expectedTotal + 15000;
 $expectedChange = 15000;
 
@@ -202,7 +195,6 @@ $orderPayload1 = [
     'items' => [
         ['service_id' => $serviceId, 'quantity' => $qty, 'category' => 'Kiloan']
     ],
-    'discount_percent' => $discPercent,
     'method' => 'cash',
     'paid' => $cashPaid,
     'expected_total' => $expectedTotal,
@@ -214,7 +206,6 @@ $orderRes = callApp('/api/orders', 'POST', $orderPayload1, $cashierCookies);
 $order = $orderRes['json']['order'] ?? null;
 $calcCorrect = $order &&
                (int)$order['subtotal'] === $expectedSubtotal &&
-               (int)$order['discount'] === $expectedDiscount &&
                (int)$order['total'] === $expectedTotal &&
                (int)$order['paid'] === $cashPaid &&
                (int)$order['change_amount'] === $expectedChange &&

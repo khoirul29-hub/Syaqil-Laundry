@@ -18,7 +18,6 @@ class Expense extends Model
         'category',
         'description',
         'amount',
-        'method',
         'actor',
     ];
 

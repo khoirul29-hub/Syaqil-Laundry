@@ -58,8 +58,6 @@ class OrderController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $discountPercent = $request->input('discount_percent', 0);
-
         $key = (string)$request->input('request_key', '');
         if (!preg_match('/^[a-zA-Z0-9-]{16,80}$/D', $key)) {
             return response()->json(['error' => 'Identitas transaksi tidak valid.'], 422);
@@ -97,8 +95,7 @@ class OrderController extends Controller
         try {
             $calc = $this->calculationService->calculate(
                 $request->input('items', []),
-                $services,
-                $discountPercent
+                $services
             );
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -141,16 +138,13 @@ class OrderController extends Controller
             return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
         }
 
-        // Pilihan parfum dihapus sesuai instruksi
-        $perfume = null;
-
         // Estimasi selesai berdasarkan durasi layanan
         $hours = array_filter(array_map(fn($i) => $i['duration_hours'] ?? null, $calc['items']));
         $dueAt = count($hours) > 0 ? now()->addHours(max($hours)) : null;
 
         $paymentStatus = $payment['payment_status'] ?? ($paymentMethod === 'later' ? 'unpaid' : 'paid');
 
-        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $paymentStatus, $notes, $perfume, $dueAt) {
+        $order = DB::transaction(function () use ($key, $fingerprint, $customer, $userId, $calc, $paymentMethod, $payment, $paymentStatus, $notes, $dueAt) {
             $order = Order::create([
                 'request_key' => $key,
                 'request_hash' => $fingerprint,
@@ -159,8 +153,6 @@ class OrderController extends Controller
                 'customer_name' => $customer->name,
                 'customer_phone' => $customer->phone,
                 'subtotal' => $calc['subtotal'],
-                'discount_percent' => $calc['discount_percent'],
-                'discount' => $calc['discount'],
                 'total' => $calc['total'],
                 'method' => $paymentMethod,
                 'paid' => $payment['paid'],
@@ -168,7 +160,6 @@ class OrderController extends Controller
                 'payment_status' => $paymentStatus,
                 'status' => 'Diterima',
                 'notes' => $notes,
-                'perfume' => $perfume,
                 'public_token' => bin2hex(random_bytes(16)),
                 'due_at' => $dueAt,
                 'created_at' => now(),

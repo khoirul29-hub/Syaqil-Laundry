@@ -24,8 +24,6 @@ class Order extends Model
         'customer_name',
         'customer_phone',
         'subtotal',
-        'discount_percent',
-        'discount',
         'total',
         'method',
         'paid',
@@ -33,7 +31,6 @@ class Order extends Model
         'payment_status',
         'status',
         'notes',
-        'perfume',
         'public_token',
         'due_at',
         'created_at',
@@ -52,8 +49,6 @@ class Order extends Model
         'customer_id' => 'integer',
         'cashier_id' => 'integer',
         'subtotal' => 'integer',
-        'discount_percent' => 'float',
-        'discount' => 'integer',
         'total' => 'integer',
         'paid' => 'integer',
         'change_amount' => 'integer',
@@ -99,7 +94,6 @@ class Order extends Model
         $arr = $this->toArray();
         $arr['cashier_name'] = $this->cashier ? $this->cashier->name : null;
         $arr['payment_status'] = $this->payment_status ?: ($this->method === 'later' ? 'unpaid' : 'paid');
-        $arr['perfume'] = null;
         $arr['public_token'] = $this->public_token;
         $arr['items'] = $this->items->map(function ($item) {
             return [
@@ -150,8 +144,6 @@ class Order extends Model
             'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
             'due_at' => $this->due_at ? $this->due_at->format('Y-m-d H:i:s') : null,
             'subtotal' => (int)$this->subtotal,
-            'discount_percent' => (float)$this->discount_percent,
-            'discount' => (int)$this->discount,
             'total' => (int)$this->total,
             'method' => $this->method,
             'paid' => (int)$this->paid,

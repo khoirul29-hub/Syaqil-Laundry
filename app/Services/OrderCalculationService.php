@@ -43,7 +43,7 @@ class OrderCalculationService
     /**
      * Perhitungan otoritatif pesanan di sisi backend.
      */
-    public function calculate(array $items, array $servicesMap, mixed $discountPercent): array
+    public function calculate(array $items, array $servicesMap): array
     {
         if (count($items) < 1 || count($items) > 50) {
             throw new InvalidArgumentException('Tambahkan minimal satu item, maksimal 50 item.');
@@ -90,22 +90,10 @@ class OrderCalculationService
             ];
         }
 
-        if ($discountPercent === null || $discountPercent === '') {
-            $discountPercent = 0;
-        } elseif (!is_scalar($discountPercent) || !preg_match('/^\d+(\.\d{1,2})?$/D', (string)$discountPercent) || (float)$discountPercent < 0 || (float)$discountPercent > 100) {
-            throw new InvalidArgumentException('Diskon harus antara 0% hingga 100%, maksimal 2 desimal.');
-        }
-
-        $basisPoints = (int)round((float)$discountPercent * 100);
-        $discount = (int)round($subtotal * $basisPoints / 10000);
-        $total = $subtotal - $discount;
-
         return [
             'items' => $lines,
             'subtotal' => $subtotal,
-            'discount_percent' => (float)$discountPercent,
-            'discount' => $discount,
-            'total' => $total,
+            'total' => $subtotal,
         ];
     }
 
@@ -166,7 +154,6 @@ class OrderCalculationService
         return hash('sha256', json_encode([
             'customer_id' => (int)($body['customer_id'] ?? 0),
             'items' => $items,
-            'discount_percent' => number_format((float)($body['discount_percent'] ?? 0), 2, '.', ''),
             'method' => (string)($body['method'] ?? ''),
             'paid' => (int)($body['paid'] ?? 0),
             'notes' => trim((string)($body['notes'] ?? '')),

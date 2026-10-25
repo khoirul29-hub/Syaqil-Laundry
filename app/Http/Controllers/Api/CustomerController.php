@@ -22,13 +22,9 @@ class CustomerController extends Controller
     public function store(Request $request): JsonResponse
     {
         $name = trim((string)$request->input('name', ''));
-        $address = trim((string)$request->input('address', ''));
 
         if (mb_strlen($name) < 2 || mb_strlen($name) > 100) {
             return response()->json(['error' => 'Nama harus berisi 2–100 karakter.'], 422);
-        }
-        if (mb_strlen($address) > 300) {
-            return response()->json(['error' => 'Alamat maksimal 300 karakter.'], 422);
         }
 
         try {
@@ -44,7 +40,6 @@ class CustomerController extends Controller
         $customer = Customer::create([
             'name' => $name,
             'phone' => $phone,
-            'address' => $address,
             'notes' => '',
             'created_at' => now(),
         ]);
@@ -67,14 +62,10 @@ class CustomerController extends Controller
         }
 
         $name = trim((string)$request->input('name', ''));
-        $address = trim((string)$request->input('address', ''));
         $notes = trim((string)$request->input('notes', ''));
 
         if (mb_strlen($name) < 2 || mb_strlen($name) > 100) {
             return response()->json(['error' => 'Nama harus berisi 2–100 karakter.'], 422);
-        }
-        if (mb_strlen($address) > 300) {
-            return response()->json(['error' => 'Alamat maksimal 300 karakter.'], 422);
         }
         if (mb_strlen($notes) > 1000) {
             return response()->json(['error' => 'Catatan maksimal 1.000 karakter.'], 422);
@@ -93,7 +84,6 @@ class CustomerController extends Controller
         $customer->update([
             'name' => $name,
             'phone' => $phone,
-            'address' => $address,
             'notes' => $notes,
         ]);
 
